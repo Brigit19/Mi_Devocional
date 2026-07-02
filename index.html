@@ -249,19 +249,47 @@
 <body>
 <div id="app"><main id="main"></main></div>
 
+<!-- Firebase (base de datos real, funciona fuera de Claude) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* ================= STORAGE HELPERS ================= */
-async function sGet(key, shared){
-  try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
-  catch(e){ return null; }
+/* ============ PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyA5pDctj0BpY0KV-lLkxmfyXQd87wND8Us",
+  authDomain: "mi-devocional-663d3.firebaseapp.com",
+  projectId: "mi-devocional-663d3",
+  storageBucket: "mi-devocional-663d3.firebasestorage.app",
+  messagingSenderId: "338063743895",
+  appId: "1:338063743895:web:1578e6298f0d8b2b3982d2"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+/* ================================================================= */
+</script>
+<script>
+/* ================= STORAGE HELPERS (Firebase Firestore) ================= */
+async function sGet(key){
+  try{
+    const doc = await db.collection('kv').doc(key).get();
+    if(!doc.exists) return null;
+    return JSON.parse(doc.data().value);
+  }catch(e){ console.error('sGet error', key, e); return null; }
 }
-async function sSet(key, value, shared){
-  try{ await window.storage.set(key, JSON.stringify(value), shared); return true; }
-  catch(e){ console.error('storage set failed', e); return false; }
+async function sSet(key, value){
+  try{
+    await db.collection('kv').doc(key).set({ value: JSON.stringify(value) });
+    return true;
+  }catch(e){ console.error('sSet error', key, e); return false; }
 }
-async function sList(prefix, shared){
-  try{ const r = await window.storage.list(prefix, shared); return r ? r.keys : []; }
-  catch(e){ return []; }
+async function sList(prefix){
+  try{
+    const end = prefix + '\uf8ff';
+    const snap = await db.collection('kv')
+      .where(firebase.firestore.FieldPath.documentId(), '>=', prefix)
+      .where(firebase.firestore.FieldPath.documentId(), '<', end)
+      .get();
+    return snap.docs.map(d=>d.id);
+  }catch(e){ console.error('sList error', prefix, e); return []; }
 }
 
 /* ================= DEFAULT ROSTER ================= */
@@ -281,15 +309,15 @@ function slugId(name, idx){
 }
 
 async function ensureSeed(){
-  let names = await sGet('nombres', true);
+  let names = await sGet('nombres');
   if(!names){
     names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000' }));
-    await sSet('nombres', names, true);
+    await sSet('nombres', names);
   }
-  let config = await sGet('config', true);
+  let config = await sGet('config');
   if(!config){
     config = { leaderPin: '1234' };
-    await sSet('config', config, true);
+    await sSet('config', config);
   }
   return { names, config };
 }
@@ -403,11 +431,10 @@ function renderGirlLogin(){
 async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   const today = todayStr();
-  const devos = (await sGet('devocionales', true)) || {};
-  const devo = devos[today];
-  const stats = (await sGet('stats:'+State.currentUser.id, true)) || { totalM:0, totalDias:0, racha:0, ultimaFecha:null };
+  const devo = await sGet('devocional:'+today);
+  const stats = (await sGet('stats:'+State.currentUser.id)) || { totalM:0, totalDias:0, racha:0, ultimaFecha:null };
   const regKey = 'registro:'+today+':'+State.currentUser.id;
-  const registroHoy = await sGet(regKey, true);
+  const registroHoy = await sGet(regKey);
 
   const user = State.currentUser;
   main.innerHTML = `
@@ -458,7 +485,7 @@ async function renderGirlHome(){
       sealBtn.querySelector('.cap').textContent = 'Guardando...';
       const base64 = await compressImage(file);
       const registro = { estado:'M', foto: base64, hora: new Date().toISOString() };
-      await sSet(regKey, registro, true);
+      await sSet(regKey, registro);
       const newStats = await computeAndSaveStats(user.id, today);
       toast('¡Evidencia registrada! 🌸');
       renderGirlHome();
@@ -486,7 +513,7 @@ function compressImage(file, maxW=800, quality=0.65){
 }
 
 async function computeAndSaveStats(userId, dateStr){
-  const prev = (await sGet('stats:'+userId, true)) || { totalM:0, totalDias:0, racha:0, ultimaFecha:null };
+  const prev = (await sGet('stats:'+userId)) || { totalM:0, totalDias:0, racha:0, ultimaFecha:null };
   let racha = prev.racha || 0;
   if(prev.ultimaFecha){
     const prevD = new Date(prev.ultimaFecha+'T00:00:00');
@@ -495,7 +522,7 @@ async function computeAndSaveStats(userId, dateStr){
     racha = diff===1 ? racha+1 : 1;
   } else { racha = 1; }
   const stats = { totalM: (prev.totalM||0)+1, totalDias:(prev.totalDias||0)+1, racha, ultimaFecha: dateStr };
-  await sSet('stats:'+userId, stats, true);
+  await sSet('stats:'+userId, stats);
   return stats;
 }
 
@@ -566,7 +593,7 @@ async function renderTabHoy(){
   const body = $('#tabBody');
   body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando...</div>';
   const today = todayStr();
-  const keys = await sList('registro:'+today+':', true);
+  const keys = await sList('registro:'+today+':');
   const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
   const total = State.names.length;
   const yes = submittedIds.size;
@@ -620,7 +647,7 @@ async function renderTabResumen(){
   const dim = daysInMonth(today.getFullYear(), today.getMonth()+1);
   const results = [];
   for(const n of State.names){
-    const st = await sGet('stats:'+n.id, true);
+    const st = await sGet('stats:'+n.id);
     const totalM = st ? st.totalM : 0;
     const pct = Math.round((totalM/dim)*100);
     results.push({ n, totalM, pct });
@@ -641,18 +668,19 @@ async function renderTabResumen(){
 async function renderTabDevocionales(){
   const body = $('#tabBody');
   body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando calendario...</div>';
-  const devos = (await sGet('devocionales', true)) || {};
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth()+1;
+  const monthPrefix = `devocional:${y}-${String(m).padStart(2,'0')}`;
+  const existingKeys = new Set(await sList(monthPrefix));
   const dim = daysInMonth(y,m);
   const selected = State.selectedDay || todayStr();
 
   let dots = '';
   for(let d=1; d<=dim; d++){
     const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    dots += `<div class="day-dot ${devos[ds]?'has':''} ${ds===selected?'selected':''}" data-d="${ds}">${d}</div>`;
+    dots += `<div class="day-dot ${existingKeys.has('devocional:'+ds)?'has':''} ${ds===selected?'selected':''}" data-d="${ds}">${d}</div>`;
   }
-  const devo = devos[selected] || {};
+  const devo = (await sGet('devocional:'+selected)) || {};
 
   body.innerHTML = `
     <div class="section-title"><div><h2>Devocionales del mes</h2><p>Toca un día para subir la imagen y el mensaje</p></div></div>
@@ -677,15 +705,15 @@ async function renderTabDevocionales(){
   $('#dImgInput').onchange = async (e)=>{
     const file = e.target.files[0]; if(!file) return;
     $('#pickImg').textContent = 'Procesando imagen...';
-    pendingImg = await compressImage(file, 900, 0.75);
+    pendingImg = await compressImage(file, 800, 0.7);
     $('#pickImg').textContent = 'Cambiar imagen';
     toast('Imagen lista, no olvides publicar');
   };
   $('#saveDevo').onclick = async ()=>{
     const texto = $('#dTexto').value.trim();
     if(!pendingImg && !texto){ toast('Agrega la imagen o el mensaje del día'); return; }
-    devos[selected] = { imagen: pendingImg, texto };
-    await sSet('devocionales', devos, true);
+    $('#saveDevo').textContent = 'Publicando...';
+    await sSet('devocional:'+selected, { imagen: pendingImg, texto });
     toast('Devocional publicado ✦');
     renderTabDevocionales();
   };
@@ -719,7 +747,7 @@ async function renderTabSenoritas(){
     if(!name){ toast('Escribe el nombre'); return; }
     const newEntry = { id: slugId(name, State.names.length+Math.floor(Math.random()*999)), nombre:name, pin };
     State.names.push(newEntry);
-    await sSet('nombres', State.names, true);
+    await sSet('nombres', State.names);
     toast('Señorita agregada 🌸');
     renderTabSenoritas();
   };
@@ -730,7 +758,7 @@ async function renderTabSenoritas(){
       if(!p) return;
       const entry = State.names.find(x=>x.id===id);
       entry.pin = p.trim();
-      await sSet('nombres', State.names, true);
+      await sSet('nombres', State.names);
       toast('PIN actualizado');
       renderTabSenoritas();
     };
@@ -740,8 +768,8 @@ async function renderTabSenoritas(){
 /* --- MODAL: girl detail (leader) --- */
 async function openGirlModal(id, dateStr){
   const n = State.names.find(x=>x.id===id);
-  const st = (await sGet('stats:'+id, true)) || { totalM:0, racha:0 };
-  const reg = await sGet('registro:'+dateStr+':'+id, true);
+  const st = (await sGet('stats:'+id)) || { totalM:0, racha:0 };
+  const reg = await sGet('registro:'+dateStr+':'+id);
   const overlay = document.createElement('div');
   overlay.className='modal-overlay';
   overlay.innerHTML = `
