@@ -470,7 +470,7 @@ async function renderGirlHome(){
           <span class="cap">${registroHoy?'Sellado':'Subir evidencia'}</span>
         </button>
         <p class="seal-hint">${registroHoy? '¡Tu devocional de hoy quedó registrado!' : 'Toca para tomar o subir tu foto'}</p>
-        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none;">
+        <input type="file" id="fileInput" accept="image/*" style="display:none;">
         ${registroHoy && registroHoy.foto ? `<div class="thumb-wrap"><img src="${registroHoy.foto}"></div>` : ''}
       </div>` : ''}
     </main>
