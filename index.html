@@ -230,6 +230,7 @@
   }
   .day-dot.has{ background:var(--gold-soft); border-color:var(--gold); color:var(--primary-dark); }
   .day-dot.selected{ outline:2px solid var(--fuchsia); outline-offset:1px; }
+  .day-dot.locked{ opacity:.35; cursor:not-allowed; background:repeating-linear-gradient(45deg, #fff, #fff 4px, var(--line) 4px, var(--line) 5px); }
 
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--primary-dark); color:#fff;
@@ -345,6 +346,18 @@ function toast(msg){
   document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
 }
 function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+function monthKey(dateStr){ return dateStr.slice(0,7); }
+function addDaysToStr(dateStr, delta){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function isDateEditable(ds){
+  const today = todayStr();
+  const yesterday = addDaysToStr(today, -1);
+  const tomorrow = addDaysToStr(today, 1);
+  return ds===yesterday || ds===today || ds===tomorrow;
+}
 
 async function init(){
   const seed = await ensureSeed();
@@ -435,7 +448,9 @@ async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   const today = todayStr();
   const devo = await sGet('devocional:'+today);
-  const stats = (await sGet('stats:'+State.currentUser.id)) || { totalM:0, totalDias:0, racha:0, ultimaFecha:null };
+  const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
+  const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
+  const stats = { racha: streak.racha, totalM: monthStats.totalM };
   const regKey = 'registro:'+today+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
 
@@ -524,17 +539,22 @@ function compressImage(file, maxW=800, quality=0.65){
 }
 
 async function computeAndSaveStats(userId, dateStr){
-  const prev = (await sGet('stats:'+userId)) || { totalM:0, totalDias:0, racha:0, ultimaFecha:null };
-  let racha = prev.racha || 0;
-  if(prev.ultimaFecha){
-    const prevD = new Date(prev.ultimaFecha+'T00:00:00');
+  const prevStreak = (await sGet('streak:'+userId)) || { racha:0, ultimaFecha:null };
+  let racha = prevStreak.racha || 0;
+  if(prevStreak.ultimaFecha){
+    const prevD = new Date(prevStreak.ultimaFecha+'T00:00:00');
     const curD = new Date(dateStr+'T00:00:00');
     const diff = Math.round((curD-prevD)/86400000);
     racha = diff===1 ? racha+1 : 1;
   } else { racha = 1; }
-  const stats = { totalM: (prev.totalM||0)+1, totalDias:(prev.totalDias||0)+1, racha, ultimaFecha: dateStr };
-  await sSet('stats:'+userId, stats);
-  return stats;
+  await sSet('streak:'+userId, { racha, ultimaFecha: dateStr });
+
+  const mKey = 'statsmonth:'+userId+':'+monthKey(dateStr);
+  const prevMonth = (await sGet(mKey)) || { totalM:0 };
+  const monthStats = { totalM: (prevMonth.totalM||0)+1 };
+  await sSet(mKey, monthStats);
+
+  return { racha, totalM: monthStats.totalM };
 }
 
 /* ================= LEADER LOGIN ================= */
@@ -656,9 +676,10 @@ async function renderTabResumen(){
   body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Calculando avance...</div>';
   const today = new Date();
   const dim = daysInMonth(today.getFullYear(), today.getMonth()+1);
+  const mKey = monthKey(todayStr());
   const results = [];
   for(const n of State.names){
-    const st = await sGet('stats:'+n.id);
+    const st = await sGet('statsmonth:'+n.id+':'+mKey);
     const totalM = st ? st.totalM : 0;
     const pct = Math.round((totalM/dim)*100);
     results.push({ n, totalM, pct });
@@ -684,21 +705,26 @@ async function renderTabDevocionales(){
   const monthPrefix = `devocional:${y}-${String(m).padStart(2,'0')}`;
   const existingKeys = new Set(await sList(monthPrefix));
   const dim = daysInMonth(y,m);
-  const selected = State.selectedDay || todayStr();
+  let selected = State.selectedDay || todayStr();
+  if(!isDateEditable(selected)) selected = todayStr();
+  State.selectedDay = selected;
 
   let dots = '';
   for(let d=1; d<=dim; d++){
     const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    dots += `<div class="day-dot ${existingKeys.has('devocional:'+ds)?'has':''} ${ds===selected?'selected':''}" data-d="${ds}">${d}</div>`;
+    const editable = isDateEditable(ds);
+    dots += `<div class="day-dot ${existingKeys.has('devocional:'+ds)?'has':''} ${ds===selected?'selected':''} ${editable?'':'locked'}" data-d="${ds}" data-editable="${editable}">${d}</div>`;
   }
   const devo = (await sGet('devocional:'+selected)) || {};
+  const editable = isDateEditable(selected);
 
   body.innerHTML = `
-    <div class="section-title"><div><h2>Devocionales del mes</h2><p>Toca un día para subir la imagen y el mensaje</p></div></div>
+    <div class="section-title"><div><h2>Devocionales del mes</h2><p>Solo puedes publicar de ayer a mañana</p></div></div>
     <div class="day-list">${dots}</div>
     <div class="card">
       <label>Fecha seleccionada</label>
       <input type="text" value="${fmtDateLong(selected)}" disabled style="background:var(--gold-soft);border:none;">
+      ${editable ? `
       <label>Imagen del devocional</label>
       ${devo.imagen ? `<div class="thumb-wrap" style="margin-bottom:10px;"><img src="${devo.imagen}"></div>` : ''}
       <button class="btn btn-ghost" id="pickImg" style="width:100%;">${devo.imagen? 'Cambiar imagen' : 'Seleccionar imagen'}</button>
@@ -706,28 +732,37 @@ async function renderTabDevocionales(){
       <label>Mensaje motivacional</label>
       <textarea id="dTexto" placeholder="Escribe el mensaje motivacional de hoy...">${devo.texto||''}</textarea>
       <button class="btn btn-primary" id="saveDevo">Publicar este día</button>
+      ` : `
+      <div class="lock-note">🔒 Este día ya no se puede editar. Solo puedes publicar el devocional de ayer, hoy o mañana.</div>
+      `}
     </div>
   `;
   let pendingImg = devo.imagen || null;
   body.querySelectorAll('.day-dot').forEach(dot=>{
-    dot.onclick = ()=>{ State.selectedDay = dot.dataset.d; renderTabDevocionales(); };
+    dot.onclick = ()=>{
+      if(dot.dataset.editable === 'false'){ toast('🔒 Ese día está fuera del rango permitido'); return; }
+      State.selectedDay = dot.dataset.d; renderTabDevocionales();
+    };
   });
-  $('#pickImg').onclick = ()=> $('#dImgInput').click();
-  $('#dImgInput').onchange = async (e)=>{
-    const file = e.target.files[0]; if(!file) return;
-    $('#pickImg').textContent = 'Procesando imagen...';
-    pendingImg = await compressImage(file, 800, 0.7);
-    $('#pickImg').textContent = 'Cambiar imagen';
-    toast('Imagen lista, no olvides publicar');
-  };
-  $('#saveDevo').onclick = async ()=>{
-    const texto = $('#dTexto').value.trim();
-    if(!pendingImg && !texto){ toast('Agrega la imagen o el mensaje del día'); return; }
-    $('#saveDevo').textContent = 'Publicando...';
-    await sSet('devocional:'+selected, { imagen: pendingImg, texto });
-    toast('Devocional publicado ✦');
-    renderTabDevocionales();
-  };
+  if(editable){
+    $('#pickImg').onclick = ()=> $('#dImgInput').click();
+    $('#dImgInput').onchange = async (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      $('#pickImg').textContent = 'Procesando imagen...';
+      pendingImg = await compressImage(file, 800, 0.7);
+      $('#pickImg').textContent = 'Cambiar imagen';
+      toast('Imagen lista, no olvides publicar');
+    };
+    $('#saveDevo').onclick = async ()=>{
+      if(!isDateEditable(selected)){ toast('🔒 Ese día ya no se puede editar'); return; }
+      const texto = $('#dTexto').value.trim();
+      if(!pendingImg && !texto){ toast('Agrega la imagen o el mensaje del día'); return; }
+      $('#saveDevo').textContent = 'Publicando...';
+      await sSet('devocional:'+selected, { imagen: pendingImg, texto });
+      toast('Devocional publicado ✦');
+      renderTabDevocionales();
+    };
+  }
 }
 
 /* --- TAB: SEÑORITAS --- */
@@ -779,7 +814,8 @@ async function renderTabSenoritas(){
 /* --- MODAL: girl detail (leader) --- */
 async function openGirlModal(id, dateStr){
   const n = State.names.find(x=>x.id===id);
-  const st = (await sGet('stats:'+id)) || { totalM:0, racha:0 };
+  const streak = (await sGet('streak:'+id)) || { racha:0 };
+  const monthStats = (await sGet('statsmonth:'+id+':'+monthKey(dateStr))) || { totalM:0 };
   const reg = await sGet('registro:'+dateStr+':'+id);
   const overlay = document.createElement('div');
   overlay.className='modal-overlay';
@@ -787,7 +823,7 @@ async function openGirlModal(id, dateStr){
     <div class="modal">
       <button class="modal-close">×</button>
       <h3>${n.nombre}</h3>
-      <p style="color:var(--ink-soft);font-size:13px;margin-top:0;">${st.totalM} días presentados este mes · racha ${st.racha}🔥</p>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:0;">${monthStats.totalM} días presentados este mes · racha ${streak.racha}🔥</p>
       ${reg && (reg.fotos || reg.foto) ? `${renderEvidenceGallery(reg)}<p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>` : `<div class="lock-note">🕊️ No ha subido evidencia el ${fmtDateLong(dateStr)}.</div>`}
     </div>`;
   document.body.appendChild(overlay);
