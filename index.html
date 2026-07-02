@@ -169,6 +169,9 @@
   .seal-hint{ font-size:12.5px; color:var(--ink-soft); }
   .thumb-wrap{ margin-top:16px; }
   .thumb-wrap img{ width:100%; max-height:220px; object-fit:cover; border-radius:16px; border:1px solid var(--line); }
+  .thumb-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:16px; }
+  .thumb-grid img{ width:100%; height:110px; object-fit:cover; border-radius:14px; border:1px solid var(--line); cursor:pointer; }
+  .thumb-grid img.solo{ grid-column:1/-1; height:200px; }
 
   .empty-devo{ text-align:center; padding:50px 20px; color:var(--ink-soft); }
   .empty-devo .glyph{ font-size:34px; margin-bottom:10px; }
@@ -469,9 +472,9 @@ async function renderGirlHome(){
           <span class="glyph">${registroHoy?'✓':'📷'}</span>
           <span class="cap">${registroHoy?'Sellado':'Subir evidencia'}</span>
         </button>
-        <p class="seal-hint">${registroHoy? '¡Tu devocional de hoy quedó registrado!' : 'Toca para tomar o subir tu foto'}</p>
-        <input type="file" id="fileInput" accept="image/*" style="display:none;">
-        ${registroHoy && registroHoy.foto ? `<div class="thumb-wrap"><img src="${registroHoy.foto}"></div>` : ''}
+        <p class="seal-hint">${registroHoy? '¡Tu devocional de hoy quedó registrado!' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
+        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
+        ${registroHoy ? renderEvidenceGallery(registroHoy) : ''}
       </div>` : ''}
     </main>
   </div>`;
@@ -481,16 +484,24 @@ async function renderGirlHome(){
   if(sealBtn && !registroHoy){
     sealBtn.onclick = ()=> $('#fileInput').click();
     $('#fileInput').onchange = async (e)=>{
-      const file = e.target.files[0]; if(!file) return;
+      const files = Array.from(e.target.files).slice(0,5); if(!files.length) return;
       sealBtn.querySelector('.cap').textContent = 'Guardando...';
-      const base64 = await compressImage(file);
-      const registro = { estado:'M', foto: base64, hora: new Date().toISOString() };
+      const fotos = [];
+      for(const f of files){ fotos.push(await compressImage(f, 700, 0.6)); }
+      const registro = { estado:'M', fotos, hora: new Date().toISOString() };
       await sSet(regKey, registro);
       const newStats = await computeAndSaveStats(user.id, today);
-      toast('¡Evidencia registrada! 🌸');
+      toast(`¡Evidencia registrada! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
       renderGirlHome();
     };
   }
+}
+
+function renderEvidenceGallery(reg){
+  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
+  if(!fotos.length) return '';
+  const soloClass = fotos.length===1 ? 'solo' : '';
+  return `<div class="thumb-grid">${fotos.map(f=>`<img class="${soloClass}" src="${f}">`).join('')}</div>`;
 }
 
 function compressImage(file, maxW=800, quality=0.65){
@@ -777,7 +788,7 @@ async function openGirlModal(id, dateStr){
       <button class="modal-close">×</button>
       <h3>${n.nombre}</h3>
       <p style="color:var(--ink-soft);font-size:13px;margin-top:0;">${st.totalM} días presentados este mes · racha ${st.racha}🔥</p>
-      ${reg && reg.foto ? `<div class="thumb-wrap"><img src="${reg.foto}"></div><p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>` : `<div class="lock-note">🕊️ No ha subido evidencia el ${fmtDateLong(dateStr)}.</div>`}
+      ${reg && (reg.fotos || reg.foto) ? `${renderEvidenceGallery(reg)}<p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>` : `<div class="lock-note">🕊️ No ha subido evidencia el ${fmtDateLong(dateStr)}.</div>`}
     </div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
