@@ -374,8 +374,8 @@ async function init(){
   const seed = await ensureSeed();
   State.names = seed.names; State.config = seed.config;
   render('role');
-  checkForUpdate();
-  setInterval(checkForUpdate, 5*60*1000);
+  // checkForUpdate(); // DESACTIVADO DURANTE DESARROLLO - Se activará cuando cambies la versión en version.json
+  // setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
@@ -595,7 +595,98 @@ async function computeAndSaveStats(userId, dateStr){
   const monthStats = { totalM: (prevMonth.totalM||0)+1 };
   await sSet(mKey, monthStats);
 
+  // Celebrar hitos de racha
+  const milestones = [7, 14, 21, 30];
+  if(milestones.includes(racha)){
+    celebrateStreak(racha);
+  }
+
   return { racha, totalM: monthStats.totalM };
+}
+
+function celebrateStreak(days){
+  playSound();
+  createConfetti();
+  const messages = {7: '¡Una semana! 🔥', 14: '¡Dos semanas! 🌟', 21: '¡Tres semanas! ✨', 30: '¡Un mes entero! 👑'};
+  const msg = messages[days] || '¡Lo lograste!';
+  toast(msg);
+}
+
+function playSound(){
+  try{
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioContext.currentTime;
+    
+    // Crear una melodía bonita (do-mi-sol)
+    const freqs = [261.63, 329.63, 392.00]; // C, E, G
+    const duration = 0.15;
+    
+    freqs.forEach((freq, i)=>{
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.2, now + i*duration);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + (i+1)*duration);
+      
+      osc.start(now + i*duration);
+      osc.stop(now + (i+1)*duration);
+    });
+  }catch(e){}
+}
+
+function createConfetti(){
+  const colors = ['#EFB8D2', '#C98CAE', '#D9B368', '#FCEEDD'];
+  const confettiCount = 40;
+  
+  for(let i=0; i<confettiCount; i++){
+    const confetti = document.createElement('div');
+    confetti.style.cssText = `
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius: 50%;
+      left: Math.random()*100%;
+      top: -10px;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.9;
+    `;
+    confetti.style.left = Math.random()*100 + '%';
+    document.body.appendChild(confetti);
+    
+    const duration = 2 + Math.random()*1;
+    const startX = parseFloat(confetti.style.left);
+    const startTime = Date.now();
+    
+    function animate(){
+      const elapsed = (Date.now() - startTime) / 1000;
+      const progress = elapsed / duration;
+      
+      if(progress >= 1){
+        confetti.remove();
+        return;
+      }
+      
+      const y = progress * window.innerHeight;
+      const x = startX + (Math.random()-0.5)*100*progress;
+      const rotation = progress*360*Math.random();
+      
+      confetti.style.top = y + 'px';
+      confetti.style.left = x + '%';
+      confetti.style.transform = `rotate(${rotation}deg)`;
+      confetti.style.opacity = 1 - progress;
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
 }
 
 /* ================= LEADER LOGIN ================= */
