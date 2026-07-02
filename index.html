@@ -32,6 +32,32 @@
     --line:#F3E1EB;
     --shadow: 0 10px 30px -12px rgba(147,84,122,0.22);
   }
+  body.dark-mode {
+    --bg:#1a1415;
+    --bg-card:#2d2527;
+    --ink:#e8d9e0;
+    --ink-soft:#b8a0ab;
+    --primary:#d9a8c4;
+    --primary-dark:#e8c8da;
+    --fuchsia:#d9a8c4;
+    --gold:#c9985a;
+    --gold-soft:#4a3a2a;
+    --success:#6fb882;
+    --success-bg:#2a4a35;
+    --danger:#d9898a;
+    --danger-bg:#4a2a2b;
+    --line:#3a2a35;
+    --shadow: 0 10px 30px -12px rgba(0,0,0,0.5);
+  }
+  .dark-mode-toggle{
+    position: fixed; top: 16px; right: 20px; z-index: 150;
+    background: var(--bg-card); border: 1.5px solid var(--line);
+    border-radius: 24px; padding: 8px 12px; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center;
+    box-shadow: 0 2px 8px -4px var(--shadow);
+    transition: .2s;
+  }
+  .dark-mode-toggle:hover{ transform: scale(1.1); }
   *{box-sizing:border-box;}
   body{
     margin:0; background:var(--bg); color:var(--ink);
@@ -370,16 +396,74 @@ function isDateEditable(ds){
   return ds===yesterday || ds===today || ds===tomorrow;
 }
 
+/* ================= DARK MODE ================= */
+async function initDarkMode(){
+  const darkModePref = await sGet('darkmode:pref');
+  if(darkModePref === true) enableDarkMode();
+  
+  const toggle = document.createElement('div');
+  toggle.className = 'dark-mode-toggle';
+  toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+  toggle.onclick = toggleDarkMode;
+  document.body.appendChild(toggle);
+}
+function toggleDarkMode(){
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  sSet('darkmode:pref', isDark);
+  document.querySelector('.dark-mode-toggle').textContent = isDark ? '☀️' : '🌙';
+}
+function enableDarkMode(){
+  document.body.classList.add('dark-mode');
+  if(document.querySelector('.dark-mode-toggle')) document.querySelector('.dark-mode-toggle').textContent = '☀️';
+}
+
+/* ================= NOTIFICACIONES ================= */
+async function scheduleNotifications(){
+  // Cada día a las 8am, notificar si no subió devocional
+  if(!('Notification' in window)) return;
+  
+  if(Notification.permission === 'granted') checkAndNotify();
+  else if(Notification.permission !== 'denied'){
+    Notification.requestPermission().then(perm => {
+      if(perm === 'granted') checkAndNotify();
+    });
+  }
+  
+  // Verificar cada hora
+  setInterval(checkAndNotify, 60*60*1000);
+}
+async function checkAndNotify(){
+  if(!State.currentUser) return;
+  const today = todayStr();
+  const regKey = 'registro:'+today+':'+State.currentUser.id;
+  const registroHoy = await sGet(regKey);
+  
+  if(!registroHoy){
+    const hour = new Date().getHours();
+    if(hour >= 8 && hour < 22){ // Entre 8am y 10pm
+      new Notification('🌸 Mi Devocional', {
+        body: 'No olvides tu devocional de hoy',
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23d9a8c4"/><circle cx="50" cy="35" r="12" fill="%23fff"/><circle cx="35" cy="50" r="12" fill="%23fff"/><circle cx="65" cy="50" r="12" fill="%23fff"/><circle cx="50" cy="65" r="12" fill="%23fff"/><circle cx="50" cy="50" r="8" fill="%23d9b368"/></svg>',
+        tag: 'devocional-reminder',
+        requireInteraction: false
+      });
+    }
+  }
+}
+
 async function init(){
   const seed = await ensureSeed();
   State.names = seed.names; State.config = seed.config;
   render('role');
-  // checkForUpdate(); // DESACTIVADO DURANTE DESARROLLO - Se activará cuando cambies la versión en version.json
+  initDarkMode();
+  scheduleNotifications();
+  // checkForUpdate(); // DESACTIVADO DURANTE DESARROLLO
   // setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-02-1";
+const APP_VERSION = "2026-07-02-4";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
