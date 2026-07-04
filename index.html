@@ -458,12 +458,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  checkForUpdate(); // ACTIVADO PARA PRESENTACIÓN PÚBLICA
-  setInterval(checkForUpdate, 5*60*1000);
+  // checkForUpdate(); // DESACTIVADO PARA FASE DE PRUEBA
+  // setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-02-7";
+const APP_VERSION = "2026-07-02-8";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
