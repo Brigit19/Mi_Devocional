@@ -50,14 +50,46 @@
     --shadow: 0 10px 30px -12px rgba(0,0,0,0.5);
   }
   .dark-mode-toggle{
-    position: fixed; top: 16px; left: 20px; z-index: 150;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 150;
     background: var(--bg-card); border: 1.5px solid var(--line);
     border-radius: 24px; padding: 8px 12px; cursor: pointer;
     font-size: 18px; display: flex; align-items: center;
     box-shadow: 0 2px 8px -4px var(--shadow);
     transition: .2s;
   }
-  .dark-mode-toggle:hover{ transform: scale(1.1); }
+  .dark-mode-toggle:hover{ transform: translateX(-50%) scale(1.1); }
+  
+  /* ========== IMAGE VIEWER ========== */
+  .image-viewer-overlay{
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9); z-index: 999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .image-viewer-container{
+    width: 90%; height: 85%; overflow: hidden; display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; position: relative;
+  }
+  .image-viewer-img{
+    max-width: 100%; max-height: 100%; object-fit: contain; cursor: grab; user-select: none;
+  }
+  .image-viewer-img.dragging{ cursor: grabbing; }
+  .image-viewer-controls{
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 12px; background: rgba(0,0,0,0.7); padding: 12px 16px; border-radius: 30px;
+  }
+  .image-viewer-btn{
+    background: var(--primary-dark); color: #fff; border: none;
+    padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600;
+    transition: .2s;
+  }
+  .image-viewer-btn:hover{ transform: scale(1.05); background: var(--fuchsia); }
+  .image-viewer-close{
+    position: absolute; top: 20px; right: 20px; font-size: 32px; cursor: pointer;
+    color: #fff; background: rgba(0,0,0,0.5); width: 50px; height: 50px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: none; transition: .2s;
+  }
+  .image-viewer-close:hover{ background: rgba(0,0,0,0.8); }
   *{box-sizing:border-box;}
   body{
     margin:0; background:var(--bg); color:var(--ink);
@@ -458,12 +490,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  checkForUpdate(); // ACTIVADO PARA LANZAMIENTO OFICIAL
+  checkForUpdate(); // ACTIVADO - Banner aparecerá cuando cambies version.json
   setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-12-lanzamiento";
+const APP_VERSION = "2026-07-18-lanzamiento";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -743,11 +775,85 @@ async function renderGirlHome(){
   }
 }
 
+function openImageViewer(imageSrc){
+  const overlay = document.createElement('div');
+  overlay.className = 'image-viewer-overlay';
+  
+  let scale = 1;
+  let offsetX = 0;
+  let offsetY = 0;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  
+  overlay.innerHTML = `
+    <button class="image-viewer-close">✕</button>
+    <div class="image-viewer-container">
+      <img class="image-viewer-img" src="${imageSrc}" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
+      <div class="image-viewer-controls">
+        <button class="image-viewer-btn" id="zoomOut">🔍−</button>
+        <button class="image-viewer-btn" id="zoomIn">🔍+</button>
+        <button class="image-viewer-btn" id="downloadBtn">📥 Descargar</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  
+  const img = overlay.querySelector('.image-viewer-img');
+  const container = overlay.querySelector('.image-viewer-container');
+  
+  // Zoom
+  overlay.querySelector('#zoomIn').onclick = ()=>{
+    scale = Math.min(scale + 0.2, 3);
+    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
+  };
+  
+  overlay.querySelector('#zoomOut').onclick = ()=>{
+    scale = Math.max(scale - 0.2, 1);
+    offsetX = 0; offsetY = 0;
+    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
+  };
+  
+  // Download
+  overlay.querySelector('#downloadBtn').onclick = ()=>{
+    const link = document.createElement('a');
+    link.href = imageSrc;
+    link.download = 'evidencia_' + new Date().getTime() + '.jpg';
+    link.click();
+  };
+  
+  // Drag to move
+  img.onmousedown = (e)=>{
+    if(scale === 1) return;
+    isDragging = true;
+    dragStartX = e.clientX - offsetX;
+    dragStartY = e.clientY - offsetY;
+    img.classList.add('dragging');
+  };
+  
+  document.onmousemove = (e)=>{
+    if(!isDragging) return;
+    offsetX = e.clientX - dragStartX;
+    offsetY = e.clientY - dragStartY;
+    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
+  };
+  
+  document.onmouseup = ()=>{
+    isDragging = false;
+    img.classList.remove('dragging');
+  };
+  
+  // Close
+  overlay.querySelector('.image-viewer-close').onclick = ()=> overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target === overlay) overlay.remove(); };
+}
+
 function renderEvidenceGallery(reg){
   const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
   if(!fotos.length) return '';
   const soloClass = fotos.length===1 ? 'solo' : '';
-  return `<div class="thumb-grid">${fotos.map(f=>`<img class="${soloClass}" src="${f}">`).join('')}</div>`;
+  return `<div class="thumb-grid">${fotos.map(f=>`<img class="${soloClass}" src="${f}" onclick="openImageViewer('${f}')" style="cursor:pointer;transition:.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">`).join('')}</div>`;
 }
 
 function compressImage(file, maxW=800, quality=0.65){
