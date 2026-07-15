@@ -458,12 +458,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  checkForUpdate(); // ACTIVADO PARA LANZAMIENTO OFICIAL
-  setInterval(checkForUpdate, 5*60*1000);
+  // checkForUpdate(); // DESACTIVADO - Solo en laptop/celular de Brigit
+  // setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-04-lanzamiento";
+const APP_VERSION = "2026-07-11-motivacion";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -571,6 +571,92 @@ function renderGirlLogin(){
 }
 
 /* ================= GIRL HOME ================= */
+async function renderGirlHistory(){
+  main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando historial...</div></div>`;
+  const user = State.currentUser;
+  const now = new Date();
+  const currentMonth = monthKey(todayStr());
+  const dim = daysInMonth(now.getFullYear(), now.getMonth()+1);
+  
+  // Get current month stats
+  const monthStats = (await sGet('statsmonth:'+user.id+':'+currentMonth)) || { totalM:0 };
+  const percentage = Math.round((monthStats.totalM / dim) * 100);
+  
+  main.innerHTML = `
+  <div class="screen">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-text">Historial<small>Mis devocionales</small></div>
+      </div>
+      <button class="icon-btn" id="backBtn">← Volver</button>
+    </div>
+    <main>
+      <div class="card">
+        <h2 style="color:var(--primary-dark);margin-top:0;">📊 Tu progreso</h2>
+        
+        <div style="text-align:center;margin:20px 0;">
+          <div style="font-size:48px;font-weight:700;color:var(--primary-dark);">${percentage}%</div>
+          <p style="margin:8px 0;color:var(--ink-soft);font-size:14px;">${monthStats.totalM} de ${dim} días presentados</p>
+          
+          <!-- Barra de progreso -->
+          <div style="width:100%;height:12px;background:var(--line);border-radius:6px;overflow:hidden;margin:16px 0;">
+            <div style="height:100%;width:${percentage}%;background:linear-gradient(90deg, var(--primary-dark), var(--fuchsia));transition:width .3s ease;"></div>
+          </div>
+          
+          <p style="font-size:13px;color:var(--ink-soft);">
+            ${percentage >= 80 ? '🌟 ¡Excelente avance!' : percentage >= 60 ? '💪 Buen trabajo' : percentage >= 40 ? '📈 Sigue adelante' : '🚀 Puedes hacerlo'}
+          </p>
+        </div>
+        
+        <hr style="margin:20px 0;border:none;border-top:1px solid var(--line);">
+        <h2 style="color:var(--primary-dark);margin-bottom:16px;">📖 Tu historial</h2>
+        
+        <div id="historyContent" style="max-height:40vh;overflow-y:auto;">
+          <div style="text-align:center;padding:20px;color:var(--ink-soft);">Cargando tus devocionales...</div>
+        </div>
+      </div>
+    </main>
+  </div>`;
+  
+  // Load history
+  const historyContent = document.getElementById('historyContent');
+  historyContent.innerHTML = '';
+  
+  // Get all records for this user this month
+  const monthPrefix = `registro:${currentMonth}`;
+  const records = await sList(monthPrefix);
+  const userRecords = records.filter(k => k.includes(':'+user.id)).sort().reverse();
+  
+  if(userRecords.length === 0){
+    historyContent.innerHTML = '<div class="lock-note">📭 Aún no has subido evidencias este mes</div>';
+  } else {
+    let html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+    for(const key of userRecords){
+      const dateStr = key.split(':')[1];
+      const devo = await sGet('devocional:'+dateStr);
+      const reg = await sGet(key);
+      
+      html += `
+        <div class="card" style="margin:0;border-left:4px solid var(--gold);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <p style="margin:0;font-weight:600;color:var(--primary-dark);">${fmtDateLong(dateStr)}</p>
+              <p style="margin:4px 0;font-size:13px;color:var(--ink-soft);">✓ Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>
+            </div>
+            <span style="font-size:28px;">✨</span>
+          </div>
+          ${reg.fotos ? `<div class="thumb-grid" style="margin-top:8px;grid-template-columns:repeat(3,1fr);">${reg.fotos.map(f=>`<img src="${f}" style="height:60px;">`).join('')}</div>` : ''}
+        </div>
+      `;
+    }
+    html += '</div>';
+    historyContent.innerHTML = html;
+  }
+  
+  document.getElementById('backBtn').onclick = ()=> renderGirlHome();
+}
+
 async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   const today = todayStr();
@@ -580,6 +666,12 @@ async function renderGirlHome(){
   const stats = { racha: streak.racha, totalM: monthStats.totalM };
   const regKey = 'registro:'+today+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
+  const deadline = (await sGet('deadline:'+today)) || addDaysToStr(today, 1);
+  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(today+'T00:00:00'))/86400000);
+  let deadlineColor = 'var(--success)';
+  let deadlineIcon = '✅';
+  if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
+  else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
 
   const user = State.currentUser;
   main.innerHTML = `
@@ -589,7 +681,10 @@ async function renderGirlHome(){
         <div class="brand-mark"></div>
         <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
       </div>
-      <button class="icon-btn" id="logout">Salir</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
+        <button class="icon-btn" id="logout">Salir</button>
+      </div>
     </div>
     <main>
       <span class="date-chip">${fmtDateLong(today)}</span>
@@ -608,6 +703,14 @@ async function renderGirlHome(){
         <div class="stat-pill"><div class="num">${stats.totalM}</div><div class="lbl">Días este mes</div></div>
       </div>
 
+      <div style="background:${deadlineColor}20;border:1.5px solid ${deadlineColor};border-radius:12px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">${deadlineIcon}</span>
+        <div>
+          <p style="margin:0;font-weight:600;color:${deadlineColor};font-size:14px;">Plazo: ${fmtDateLong(deadline)}</p>
+          <p style="margin:2px 0;font-size:12px;color:${deadlineColor}80;">${daysUntilDeadline > 1 ? `Faltan ${daysUntilDeadline} días` : daysUntilDeadline === 1 ? 'Último día ⚠️' : 'Plazo vencido'}</p>
+        </div>
+      </div>
+
       ${devo ? `
       <div class="seal-zone">
         <button class="seal ${registroHoy?'done':''}" id="sealBtn">
@@ -622,6 +725,7 @@ async function renderGirlHome(){
   </div>`;
 
   $('#logout').onclick = ()=>{ State.currentUser=null; render('role'); };
+  $('#historyBtn').onclick = ()=>{ renderGirlHistory(); };
   const sealBtn = $('#sealBtn');
   if(sealBtn){
     sealBtn.onclick = ()=> $('#fileInput').click();
@@ -924,44 +1028,54 @@ async function renderTabDevocionales(){
   const existingKeys = new Set(await sList(monthPrefix));
   const dim = daysInMonth(y,m);
   let selected = State.selectedDay || todayStr();
-  if(!isDateEditable(selected)) selected = todayStr();
-  State.selectedDay = selected;
+  const devo = (await sGet('devocional:'+selected)) || {};
+  const deadline = (await sGet('deadline:'+selected)) || addDaysToStr(selected, 1); // Default: tomorrow
+  const editable = isDateEditable(selected);
 
+  // Show ALL days of the month in a nice calendar
   let dots = '';
   for(let d=1; d<=dim; d++){
     const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const editable = isDateEditable(ds);
-    dots += `<div class="day-dot ${existingKeys.has('devocional:'+ds)?'has':''} ${ds===selected?'selected':''} ${editable?'':'locked'}" data-d="${ds}" data-editable="${editable}">${d}</div>`;
+    const hasDevocional = existingKeys.has('devocional:'+ds);
+    const canEdit = isDateEditable(ds);
+    dots += `<div class="day-dot ${hasDevocional?'has':''} ${ds===selected?'selected':''} ${!canEdit && ds !== selected ? 'locked' : ''}" data-d="${ds}" data-editable="${canEdit}">${d}</div>`;
   }
-  const devo = (await sGet('devocional:'+selected)) || {};
-  const editable = isDateEditable(selected);
 
   body.innerHTML = `
-    <div class="section-title"><div><h2>Devocionales del mes</h2><p>Solo puedes publicar de ayer a mañana</p></div></div>
+    <div class="section-title"><div><h2>Devocionales del mes</h2><p>Toca un día para ver, publicar o editar plazo</p></div></div>
     <div class="day-list">${dots}</div>
     <div class="card">
       <label>Fecha seleccionada</label>
       <input type="text" value="${fmtDateLong(selected)}" disabled style="background:var(--gold-soft);border:none;">
+      
+      ${devo.imagen ? `<div class="thumb-wrap" style="margin-bottom:10px;"><img src="${devo.imagen}"></div>` : ''}
+      
       ${editable ? `
       <label>Imagen del devocional</label>
-      ${devo.imagen ? `<div class="thumb-wrap" style="margin-bottom:10px;"><img src="${devo.imagen}"></div>` : ''}
       <button class="btn btn-ghost" id="pickImg" style="width:100%;">${devo.imagen? 'Cambiar imagen' : 'Seleccionar imagen'}</button>
       <input type="file" id="dImgInput" accept="image/*" style="display:none;">
       <label>Mensaje motivacional</label>
       <textarea id="dTexto" placeholder="Escribe el mensaje motivacional de hoy...">${devo.texto||''}</textarea>
       <button class="btn btn-primary" id="saveDevo">Publicar este día</button>
+      
+      <hr style="margin:20px 0;border:none;border-top:1px solid var(--line);">
+      <label>⏳ Plazo para subir evidencias</label>
+      <p style="font-size:12px;color:var(--ink-soft);margin:4px 0;">Hasta qué día pueden las señoritas subir su devocional de este día</p>
+      <input type="date" id="deadlineInput" value="${deadline}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
+      <button class="btn btn-ghost" id="saveDeadline" style="width:100%;background:var(--gold-soft);">Guardar plazo</button>
       ` : `
-      <div class="lock-note">🔒 Este día ya no se puede editar. Solo puedes publicar el devocional de ayer, hoy o mañana.</div>
+      ${devo.texto ? `<label>Mensaje</label><p style="background:var(--gold-soft);padding:12px;border-radius:8px;margin:0;">${devo.texto}</p>` : '<div class="lock-note">📌 Sin mensaje publicado</div>'}
       `}
     </div>
   `;
+  
   let pendingImg = devo.imagen || null;
   body.querySelectorAll('.day-dot').forEach(dot=>{
     dot.onclick = ()=>{
-      if(dot.dataset.editable === 'false'){ toast('🔒 Ese día está fuera del rango permitido'); return; }
       State.selectedDay = dot.dataset.d; renderTabDevocionales();
     };
   });
+  
   if(editable){
     $('#pickImg').onclick = ()=> $('#dImgInput').click();
     $('#dImgInput').onchange = async (e)=>{
@@ -972,12 +1086,17 @@ async function renderTabDevocionales(){
       toast('Imagen lista, no olvides publicar');
     };
     $('#saveDevo').onclick = async ()=>{
-      if(!isDateEditable(selected)){ toast('🔒 Ese día ya no se puede editar'); return; }
       const texto = $('#dTexto').value.trim();
       if(!pendingImg && !texto){ toast('Agrega la imagen o el mensaje del día'); return; }
       $('#saveDevo').textContent = 'Publicando...';
       await sSet('devocional:'+selected, { imagen: pendingImg, texto });
       toast('Devocional publicado ✦');
+      renderTabDevocionales();
+    };
+    $('#saveDeadline').onclick = async ()=>{
+      const newDeadline = $('#deadlineInput').value;
+      await sSet('deadline:'+selected, newDeadline);
+      toast('⏳ Plazo actualizado');
       renderTabDevocionales();
     };
   }
@@ -1034,17 +1153,42 @@ async function openGirlModal(id, dateStr){
   const n = State.names.find(x=>x.id===id);
   const streak = (await sGet('streak:'+id)) || { racha:0 };
   const monthStats = (await sGet('statsmonth:'+id+':'+monthKey(dateStr))) || { totalM:0 };
-  const reg = await sGet('registro:'+dateStr+':'+id);
+  
   const overlay = document.createElement('div');
   overlay.className='modal-overlay';
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal" style="max-height:80vh;overflow-y:auto;">
       <button class="modal-close">×</button>
       <h3>${n.nombre}</h3>
       <p style="color:var(--ink-soft);font-size:13px;margin-top:0;">${monthStats.totalM} días presentados este mes · racha ${streak.racha}🔥</p>
-      ${reg && (reg.fotos || reg.foto) ? `${renderEvidenceGallery(reg)}<p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>` : `<div class="lock-note">🕊️ No ha subido evidencia el ${fmtDateLong(dateStr)}.</div>`}
+      
+      <label style="margin-top:16px;">Selecciona una fecha para ver evidencia:</label>
+      <input type="date" id="modalDatePicker" value="${dateStr}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:16px;">
+      
+      <div id="modalEvidenceContent"></div>
     </div>`;
   document.body.appendChild(overlay);
+  
+  // Load evidence for selected date
+  async function loadEvidence(ds){
+    const reg = await sGet('registro:'+ds+':'+id);
+    const content = document.getElementById('modalEvidenceContent');
+    if(reg && (reg.fotos || reg.foto)){
+      content.innerHTML = `
+        ${renderEvidenceGallery(reg)}
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>
+      `;
+    } else {
+      content.innerHTML = `<div class="lock-note">🕊️ Sin evidencia el ${fmtDateLong(ds)}.</div>`;
+    }
+  }
+  
+  await loadEvidence(dateStr);
+  
+  document.getElementById('modalDatePicker').onchange = (e)=>{
+    loadEvidence(e.target.value);
+  };
+  
   overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
