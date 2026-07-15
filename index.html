@@ -458,12 +458,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  // checkForUpdate(); // DESACTIVADO - Solo en laptop/celular de Brigit
-  // setInterval(checkForUpdate, 5*60*1000);
+  checkForUpdate(); // ACTIVADO PARA LANZAMIENTO OFICIAL
+  setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-11-motivacion";
+const APP_VERSION = "2026-07-12-lanzamiento";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
