@@ -490,12 +490,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  checkForUpdate(); // ACTIVADO - Banner aparecerá cuando cambies version.json
-  setInterval(checkForUpdate, 5*60*1000);
+  // checkForUpdate(); // DESACTIVADO ESTA SEMANA - Se activa el sábado 18
+  // setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-18-lanzamiento";
+const APP_VERSION = "2026-07-15-senoritas-management";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -573,7 +573,8 @@ function renderRole(){
 
 /* ================= GIRL LOGIN ================= */
 function renderGirlLogin(){
-  const opts = State.names.map(n=>`<option value="${n.id}">${n.nombre}</option>`).join('');
+  const activasNombres = State.names.filter(n=>n.activa !== false);
+  const opts = activasNombres.map(n=>`<option value="${n.id}">${n.nombre}</option>`).join('');
   main.innerHTML = `
   <div class="screen">
     <div class="topbar" style="padding-left:0;padding-right:0;">
@@ -1211,8 +1212,12 @@ async function renderTabDevocionales(){
 /* --- TAB: SEÑORITAS --- */
 async function renderTabSenoritas(){
   const body = $('#tabBody');
+  const activas = State.names.filter(n=>n.activa !== false);
+  const inactivas = State.names.filter(n=>n.activa === false);
+  
   body.innerHTML = `
-    <div class="section-title"><div><h2>Señoritas</h2><p>${State.names.length} registradas</p></div></div>
+    <div class="section-title"><div><h2>Señoritas</h2><p>${activas.length} activas${inactivas.length > 0 ? ` · ${inactivas.length} inactivas` : ''}</p></div></div>
+    
     <div class="card" style="margin-bottom:16px;">
       <label>Agregar nueva señorita</label>
       <input type="text" id="newName" placeholder="Nombre y apellido">
@@ -1220,35 +1225,82 @@ async function renderTabSenoritas(){
       <input type="tel" id="newPin" maxlength="4" placeholder="0000">
       <button class="btn btn-primary btn-sm" id="addGirl" style="width:100%;">Agregar</button>
     </div>
-    <div id="senoritaList">${State.names.map(n=>`
-      <div class="roster-row" style="cursor:default;">
-        <div class="avatar">${n.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
-        <div style="flex:1;">
-          <div class="roster-name">${n.nombre}</div>
-          <div class="roster-sub">PIN: ${n.pin}</div>
-        </div>
-        <button class="icon-btn" data-reset="${n.id}">Cambiar PIN</button>
-      </div>`).join('')}</div>
+    
+    <div style="margin-bottom:16px;">
+      <h3 style="color:var(--primary-dark);margin-bottom:12px;font-size:16px;">✅ Activas (${activas.length})</h3>
+      <div id="senoritaListActiva">${activas.length === 0 ? '<p style="color:var(--ink-soft);font-size:14px;">Sin señoritas activas</p>' : activas.map(n=>`
+        <div class="roster-row" style="cursor:default;border-left:4px solid var(--success);">
+          <div class="avatar" style="background:var(--success);color:#fff;">${n.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
+          <div style="flex:1;">
+            <div class="roster-name">${n.nombre}</div>
+            <div class="roster-sub">PIN: ${n.pin}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" data-edit="${n.id}" style="font-size:14px;padding:6px 10px;">✏️</button>
+            <button class="icon-btn danger" data-deactivate="${n.id}" style="font-size:14px;padding:6px 10px;color:var(--danger);">🗑️</button>
+          </div>
+        </div>`).join('')}</div>
+    </div>
+    
+    ${inactivas.length > 0 ? `
+    <div>
+      <h3 style="color:var(--ink-soft);margin-bottom:12px;font-size:16px;">⏸️ Inactivas (${inactivas.length})</h3>
+      <div id="senoritaListInactiva">${inactivas.map(n=>`
+        <div class="roster-row" style="cursor:default;opacity:0.6;border-left:4px solid var(--line);">
+          <div class="avatar" style="background:var(--line);">${n.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
+          <div style="flex:1;">
+            <div class="roster-name">${n.nombre}</div>
+            <div class="roster-sub">PIN: ${n.pin}</div>
+          </div>
+          <button class="icon-btn" data-reactivate="${n.id}" style="font-size:14px;padding:6px 10px;color:var(--success);">↩️ Reactivar</button>
+        </div>`).join('')}</div>
+    </div>` : ''}
   `;
+  
   $('#addGirl').onclick = async ()=>{
     const name = $('#newName').value.trim();
     const pin = $('#newPin').value.trim() || '0000';
     if(!name){ toast('Escribe el nombre'); return; }
-    const newEntry = { id: slugId(name, State.names.length+Math.floor(Math.random()*999)), nombre:name, pin };
+    const newEntry = { id: slugId(name, State.names.length+Math.floor(Math.random()*999)), nombre:name, pin, activa:true };
     State.names.push(newEntry);
     await sSet('nombres', State.names);
     toast('Señorita agregada 🌸');
     renderTabSenoritas();
   };
-  body.querySelectorAll('[data-reset]').forEach(btn=>{
+  
+  body.querySelectorAll('[data-edit]').forEach(btn=>{
     btn.onclick = async ()=>{
-      const id = btn.dataset.reset;
+      const id = btn.dataset.edit;
       const p = prompt('Nuevo PIN (4 dígitos):');
       if(!p) return;
       const entry = State.names.find(x=>x.id===id);
       entry.pin = p.trim();
       await sSet('nombres', State.names);
-      toast('PIN actualizado');
+      toast('PIN actualizado ✓');
+      renderTabSenoritas();
+    };
+  });
+  
+  body.querySelectorAll('[data-deactivate]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.deactivate;
+      const entry = State.names.find(x=>x.id===id);
+      if(confirm(`¿Desactivar a ${entry.nombre}? Sus datos se guardan, puedes reactivarla después.`)){
+        entry.activa = false;
+        await sSet('nombres', State.names);
+        toast(`${entry.nombre} desactivada`);
+        renderTabSenoritas();
+      }
+    };
+  });
+  
+  body.querySelectorAll('[data-reactivate]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.reactivate;
+      const entry = State.names.find(x=>x.id===id);
+      entry.activa = true;
+      await sSet('nombres', State.names);
+      toast(`${entry.nombre} reactivada ✓`);
       renderTabSenoritas();
     };
   });
