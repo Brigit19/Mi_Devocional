@@ -497,7 +497,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-AYER-HOY-WORKING";
+const APP_VERSION = "2026-08-24-BOTONES-PERMANENTES";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -702,6 +702,27 @@ function switchDay(daysOffset) {
 
 
 async function renderGirlHome(){
+  const today = todayStr();
+  const selectedDate = sessionStorage.getItem('selectedDate') || today;
+  
+  // Cargar datos de Firebase
+  const devo = await sGet('devocional:'+selectedDate);
+  const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
+  const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
+  const stats = { racha: streak.racha, totalM: monthStats.totalM };
+  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
+  const registroHoy = await sGet(regKey);
+  const deadline = (await sGet('deadline:'+selectedDate)) || addDaysToStr(selectedDate, 1);
+  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(selectedDate+'T00:00:00'))/86400000);
+  
+  let deadlineColor = 'var(--success)';
+  let deadlineIcon = '✅';
+  if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
+  else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
+
+  const user = State.currentUser;
+  
+  // UNA SOLA VEZ - TOPBAR CON BOTONES + CONTENIDO
   main.innerHTML = `
   <div class="screen">
     <div class="topbar" style="background: var(--primary-dark); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 12px 12px;">
@@ -711,27 +732,8 @@ async function renderGirlHome(){
         <button id="btnHoy" onclick="switchDay(0)" style="background: rgba(255,255,255,0.4); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Hoy</button>
       </div>
     </div>
-    <div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div>
-  </div>`;
-  const today = todayStr();
-  const selectedDate = sessionStorage.getItem('selectedDate') || today;
-  const devo = await sGet('devocional:'+selectedDate);
-  const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
-  const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
-  const stats = { racha: streak.racha, totalM: monthStats.totalM };
-  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
-  const registroHoy = await sGet(regKey);
-  const deadline = (await sGet('deadline:'+selectedDate)) || addDaysToStr(selectedDate, 1);
-  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(selectedDate+'T00:00:00'))/86400000);
-  let deadlineColor = 'var(--success)';
-  let deadlineIcon = '✅';
-  if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
-  else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
-
-  const user = State.currentUser;
-  main.innerHTML = `
-  <div class="screen">
-    <div class="topbar">
+    
+    <div class="topbar" style="background: transparent; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
       <div class="brand">
         <div class="brand-mark"></div>
         <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
@@ -741,6 +743,7 @@ async function renderGirlHome(){
         <button class="icon-btn" id="logout">Salir</button>
       </div>
     </div>
+    
     <main>
       <span class="date-chip">${fmtDateLong(selectedDate)}</span>
       ${devo ? `
@@ -750,7 +753,7 @@ async function renderGirlHome(){
       </div>` : `
       <div class="card empty-devo">
         <div class="glyph">🕊️</div>
-        <p>Aún no se publica el devocional de hoy.<br>Vuelve un poco más tarde.</p>
+        <p>Aún no se publica el devocional de ${selectedDate===today?'hoy':'este día'}.<br>Vuelve un poco más tarde.</p>
       </div>`}
 
       <div class="streak-row">
@@ -779,13 +782,16 @@ async function renderGirlHome(){
     </main>
   </div>`;
 
+  // Event listeners
   $('#logout').onclick = ()=>{ State.currentUser=null; render('role'); };
   $('#historyBtn').onclick = ()=>{ renderGirlHistory(); };
+  
   const sealBtn = $('#sealBtn');
   if(sealBtn){
     sealBtn.onclick = ()=> $('#fileInput').click();
     $('#fileInput').onchange = async (e)=>{
-      const files = Array.from(e.target.files).slice(0,5); if(!files.length) return;
+      const files = Array.from(e.target.files).slice(0,5);
+      if(!files.length) return;
       sealBtn.querySelector('.cap').textContent = 'Guardando...';
       const fotos = [];
       for(const f of files){ fotos.push(await compressImage(f, 700, 0.6)); }
@@ -797,107 +803,6 @@ async function renderGirlHome(){
     };
   }
 }
-
-function openImageViewer(imageSrc){
-  const overlay = document.createElement('div');
-  overlay.className = 'image-viewer-overlay';
-  
-  let scale = 1;
-  let offsetX = 0;
-  let offsetY = 0;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  
-  overlay.innerHTML = `
-    <button class="image-viewer-close">✕</button>
-    <div class="image-viewer-container">
-      <img class="image-viewer-img" src="${imageSrc}" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
-      <div class="image-viewer-controls">
-        <button class="image-viewer-btn" id="zoomOut">🔍−</button>
-        <button class="image-viewer-btn" id="zoomIn">🔍+</button>
-        <button class="image-viewer-btn" id="downloadBtn">📥 Descargar</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(overlay);
-  
-  const img = overlay.querySelector('.image-viewer-img');
-  const container = overlay.querySelector('.image-viewer-container');
-  
-  // Zoom
-  overlay.querySelector('#zoomIn').onclick = ()=>{
-    scale = Math.min(scale + 0.2, 3);
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  overlay.querySelector('#zoomOut').onclick = ()=>{
-    scale = Math.max(scale - 0.2, 1);
-    offsetX = 0; offsetY = 0;
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  // Download
-  overlay.querySelector('#downloadBtn').onclick = ()=>{
-    const link = document.createElement('a');
-    link.href = imageSrc;
-    link.download = 'evidencia_' + new Date().getTime() + '.jpg';
-    link.click();
-  };
-  
-  // Drag to move
-  img.onmousedown = (e)=>{
-    if(scale === 1) return;
-    isDragging = true;
-    dragStartX = e.clientX - offsetX;
-    dragStartY = e.clientY - offsetY;
-    img.classList.add('dragging');
-  };
-  
-  document.onmousemove = (e)=>{
-    if(!isDragging) return;
-    offsetX = e.clientX - dragStartX;
-    offsetY = e.clientY - dragStartY;
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  document.onmouseup = ()=>{
-    isDragging = false;
-    img.classList.remove('dragging');
-  };
-  
-  // Close
-  overlay.querySelector('.image-viewer-close').onclick = ()=> overlay.remove();
-  overlay.onclick = (e)=>{ if(e.target === overlay) overlay.remove(); };
-}
-
-function renderEvidenceGallery(reg){
-  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
-  if(!fotos.length) return '';
-  const soloClass = fotos.length===1 ? 'solo' : '';
-  return `<div class="thumb-grid">${fotos.map(f=>`<img class="${soloClass}" src="${f}" onclick="openImageViewer('${f}')" style="cursor:pointer;transition:.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">`).join('')}</div>`;
-}
-
-function compressImage(file, maxW=800, quality=0.65){
-  return new Promise((resolve)=>{
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      const img = new Image();
-      img.onload = ()=>{
-        const scale = Math.min(1, maxW/img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width*scale; canvas.height = img.height*scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
 async function computeAndSaveStats(userId, dateStr){
   const prevStreak = (await sGet('streak:'+userId)) || { racha:0, ultimaFecha:null };
   let racha = prevStreak.racha || 0;
