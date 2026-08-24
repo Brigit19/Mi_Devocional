@@ -948,12 +948,6 @@ async function renderGirlHome(){
       btn.onclick = ()=>loadDay(btn.dataset.date);
     });
 
-    // Event listener para botón Salir
-    const logoutBtn = document.getElementById('logoutGirl');
-    if(logoutBtn){
-      logoutBtn.onclick = ()=>{ State.currentUser = null; render('role'); };
-    }
-
     // Event listener para subir evidencia
     const sealBtn = document.getElementById('sealBtn');
     if(sealBtn){
@@ -996,6 +990,10 @@ async function renderGirlHome(){
   }
 
   await loadDay(selectedDate);
+
+  // Event listener para botón Salir
+  const logoutBtn = document.getElementById('logoutGirl');
+  if(logoutBtn) logoutBtn.onclick = ()=>{ State.currentUser = null; render('role'); };
 
   const topbar = document.querySelector('.topbar');
   if(!topbar){
