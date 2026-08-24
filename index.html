@@ -470,7 +470,7 @@ async function checkAndNotify(){
   if(!State.currentUser) return;
   const today = todayStr();
   const selectedDate = sessionStorage.getItem('selectedDate') || today;
-  const regKey = 'registro:'+today+':'+State.currentUser.id;
+  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
   
   if(!registroHoy){
@@ -497,7 +497,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-FINAL-FIXED";
+const APP_VERSION = "2026-08-24-AYER-HOY-WORKING";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -715,14 +715,14 @@ async function renderGirlHome(){
   </div>`;
   const today = todayStr();
   const selectedDate = sessionStorage.getItem('selectedDate') || today;
-  const devo = await sGet('devocional:'+today);
+  const devo = await sGet('devocional:'+selectedDate);
   const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
   const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
   const stats = { racha: streak.racha, totalM: monthStats.totalM };
-  const regKey = 'registro:'+today+':'+State.currentUser.id;
+  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
-  const deadline = (await sGet('deadline:'+today)) || addDaysToStr(today, 1);
-  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(today+'T00:00:00'))/86400000);
+  const deadline = (await sGet('deadline:'+selectedDate)) || addDaysToStr(selectedDate, 1);
+  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(selectedDate+'T00:00:00'))/86400000);
   let deadlineColor = 'var(--success)';
   let deadlineIcon = '✅';
   if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
@@ -742,7 +742,7 @@ async function renderGirlHome(){
       </div>
     </div>
     <main>
-      <span class="date-chip">${fmtDateLong(today)}</span>
+      <span class="date-chip">${fmtDateLong(selectedDate)}</span>
       ${devo ? `
       <div class="devo-card">
         ${devo.imagen ? `<img class="devo-img" src="${devo.imagen}">` : ''}
