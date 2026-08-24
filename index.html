@@ -468,7 +468,7 @@ async function scheduleNotifications(){
 async function checkAndNotify(){
   if(!State.currentUser) return;
   const today = todayStr();
-  const regKey = 'registro:'+today+':'+State.currentUser.id;
+  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
   
   if(!registroHoy){
@@ -495,7 +495,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-restored-stable";
+const APP_VERSION = "2026-08-24-ayer-hoy-funcional";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -624,7 +624,6 @@ async function renderGirlHistory(){
       </div>
       <button class="icon-btn" id="backBtn">← Volver</button>
     </div>
-    <main>
       <div class="card">
         <h2 style="color:var(--primary-dark);margin-top:0;">📊 Tu progreso</h2>
         
@@ -649,7 +648,6 @@ async function renderGirlHistory(){
           <div style="text-align:center;padding:20px;color:var(--ink-soft);">Cargando tus devocionales...</div>
         </div>
       </div>
-    </main>
   </div>`;
   
   // Load history
@@ -690,16 +688,25 @@ async function renderGirlHistory(){
   document.getElementById('backBtn').onclick = ()=> renderGirlHome();
 }
 
+
+// Función para recargar renderGirlHome cuando se selecciona un día
+function switchDay(newDay){
+  State.selectedDay = newDay;
+  renderGirlHome();
+}
+
 async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   const today = todayStr();
-  const devo = await sGet('devocional:'+today);
+  // Usar el día seleccionado si existe
+  const selectedDate = State.selectedDay || today;
+  const devo = await sGet('devocional:'+selectedDate);
   const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
   const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
   const stats = { racha: streak.racha, totalM: monthStats.totalM };
-  const regKey = 'registro:'+today+':'+State.currentUser.id;
+  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
-  const deadline = (await sGet('deadline:'+today)) || addDaysToStr(today, 1);
+  const deadline = (await sGet('deadline:'+selectedDate)) || addDaysToStr(today, 1);
   const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(today+'T00:00:00'))/86400000);
   let deadlineColor = 'var(--success)';
   let deadlineIcon = '✅';
@@ -719,16 +726,15 @@ async function renderGirlHome(){
         <button class="icon-btn" id="logout">Salir</button>
       </div>
     </div>
-    <main>
       <div style="display:flex;gap:8px;margin:16px 0;justify-content:center;">
-        <button class="day-btn" id="btnAyer" style="padding:8px 16px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;font-size:12px;">
+        <button class="day-btn" id="btnAyer" onclick="switchDay(addDaysToStr(todayStr(), -1))" style="padding:8px 16px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;font-size:12px;">
           Ayer
         </button>
-        <button class="day-btn" id="btnHoy" style="padding:8px 16px;border:2px solid var(--primary-dark);border-radius:8px;background:var(--gold-soft);cursor:pointer;font-weight:600;font-size:12px;color:var(--primary-dark);">
+        <button class="day-btn" id="btnHoy" onclick="switchDay(todayStr())" style="padding:8px 16px;border:2px solid var(--primary-dark);border-radius:8px;background:var(--gold-soft);cursor:pointer;font-weight:600;font-size:12px;color:var(--primary-dark);">
           Hoy
         </button>
       </div>
-      <span class="date-chip">${fmtDateLong(today)}</span>
+      <span class="date-chip">${fmtDateLong(selectedDate)}</span>
       ${devo ? `
       <div class="devo-card">
         ${devo.imagen ? `<img class="devo-img" src="${devo.imagen}">` : ''}
@@ -762,7 +768,6 @@ async function renderGirlHome(){
         <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
         ${registroHoy ? renderEvidenceGallery(registroHoy) : ''}
       </div>` : ''}
-    </main>
   </div>`;
 
   $('#logout').onclick = ()=>{ State.currentUser=null; render('role'); };
@@ -1027,9 +1032,8 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      <button class="icon-btn" id="logout">Salir</button>
+      
     </div>
-    <main>
       <div class="tabs">
         <div class="tab" data-t="hoy">Hoy</div>
         <div class="tab" data-t="resumen">Resumen</div>
@@ -1037,7 +1041,6 @@ async function renderLeaderHome(){
         <div class="tab" data-t="senoritas">Señoritas</div>
       </div>
       <div id="tabBody"></div>
-    </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
   document.querySelectorAll('.tab').forEach(t=>{
