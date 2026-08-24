@@ -497,7 +497,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-CONFIG-TAB-CAMBIAR-PIN";
+const APP_VERSION = "2026-08-24-UPLOAD-FIXED";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -792,13 +792,56 @@ async function renderGirlHome(){
     $('#fileInput').onchange = async (e)=>{
       const files = Array.from(e.target.files).slice(0,5);
       if(!files.length) return;
-      sealBtn.querySelector('.cap').textContent = 'Guardando...';
-      const fotos = [];
-      for(const f of files){ fotos.push(await compressImage(f, 700, 0.6)); }
-      const registro = { estado:'M', fotos, hora: new Date().toISOString() };
-      await sSet(regKey, registro);
-      const newStats = await computeAndSaveStats(user.id, today);
-      toast(`¡Evidencia ${registroHoy ? 'actualizada' : 'registrada'}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
+      
+      try {
+        const btnText = sealBtn.querySelector('.cap');
+        btnText.textContent = '📸 Guardando...';
+        sealBtn.disabled = true;
+        
+        // Comprimir imágenes
+        const fotos = [];
+        for(const f of files){ 
+          try {
+            const compressed = await compressImage(f, 700, 0.6);
+            fotos.push(compressed);
+          } catch(err) {
+            console.error('Error comprimiendo:', err);
+            toast('❌ Error al procesar imagen');
+            throw err;
+          }
+        }
+        
+        if(!fotos.length) {
+          toast('❌ No se pudieron procesar las imágenes');
+          sealBtn.disabled = false;
+          btnText.textContent = registroHoy ? '✏️ Editar evidencia' : '📷 Subir evidencia';
+          return;
+        }
+        
+        // Guardar en Firebase
+        btnText.textContent = '💾 Guardando en la nube...';
+        const registro = { estado:'M', fotos, hora: new Date().toISOString() };
+        await sSet(regKey, registro);
+        
+        // Actualizar estadísticas
+        btnText.textContent = '📊 Actualizando estadísticas...';
+        await computeAndSaveStats(user.id, today);
+        
+        // Éxito
+        const isUpdate = registroHoy ? 'actualizada' : 'registrada';
+        toast(`✅ ¡Devocional ${isUpdate}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
+        
+        // Recargar
+        setTimeout(()=>renderGirlHome(), 1500);
+        
+      } catch(err) {
+        console.error('Error en subida:', err);
+        toast('❌ Error al subir. Intenta de nuevo.');
+        sealBtn.disabled = false;
+        sealBtn.querySelector('.cap').textContent = registroHoy ? '✏️ Editar evidencia' : '📷 Subir evidencia';
+      }
+    };
+  }! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
       renderGirlHome();
     };
   }
