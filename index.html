@@ -391,38 +391,35 @@ function slugId(name, idx){
 }
 
 async function ensureSeed(){
-  let names = await sGet('nombres');
-  if(!names || !Array.isArray(names) || names.length === 0){
-    console.log('📝 Creando lista de nombres desde DEFAULT_NAMES...');
-    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
-    try{
-      await sSet('nombres', names);
-      console.log('✅ Nombres guardados en Firebase');
-    }catch(e){
-      console.error('❌ Error guardando nombres:', e);
+  try {
+    let names = await Promise.race([
+      sGet('nombres'),
+      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+    ]);
+    
+    if(!names || !Array.isArray(names) || names.length === 0){
+      names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
+      try{ await sSet('nombres', names); }catch(e){}
     }
-  }
-  
-  let config = await sGet('config');
-  if(!config){
-    console.log('📝 Creando configuración por defecto...');
-    config = { leaderPin: '1234' };
-    try{
-      await sSet('config', config);
-      console.log('✅ Configuración guardada en Firebase');
-    }catch(e){
-      console.error('❌ Error guardando configuración:', e);
+    
+    let config = await Promise.race([
+      sGet('config'),
+      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+    ]);
+    
+    if(!config){
+      config = { leaderPin: '1234' };
+      try{ await sSet('config', config); }catch(e){}
     }
+    
+    return { names: names || DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true })), config: config || { leaderPin: '1234' } };
+  } catch(err) {
+    console.warn('⚠️ Firebase timeout/error, usando datos locales:', err.message);
+    return { 
+      names: DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true })), 
+      config: { leaderPin: '1234' } 
+    };
   }
-  
-  // Validación final
-  if(!names){
-    console.error('🚨 CRÍTICO: names sigue siendo null/undefined, usando DEFAULT_NAMES');
-    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
-  }
-  
-  console.log('✅ ensureSeed() completado. Nombres:', names.length);
-  return { names, config };
 }
 
 /* ================= APP STATE ================= */
@@ -515,17 +512,33 @@ async function checkAndNotify(){
 }
 
 async function init(){
-  const seed = await ensureSeed();
-  State.names = seed.names; State.config = seed.config;
-  render('role');
-  initDarkMode();
-  scheduleNotifications();
-  // checkForUpdate(); // DESACTIVADO ESTA SEMANA - Se activa el sábado 18
-  // setInterval(checkForUpdate, 5*60*1000);
+  try {
+    console.log('🚀 Inicializando app...');
+    const seed = await ensureSeed();
+    State.names = seed.names || [];
+    State.config = seed.config || { leaderPin: '1234' };
+    
+    if(!State.names || State.names.length === 0) {
+      State.names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
+    }
+    
+    console.log('✅ Datos cargados:', State.names.length, 'señoritas');
+    
+    render('role');
+    initDarkMode();
+    scheduleNotifications();
+    console.log('✅ App lista');
+  } catch(err) {
+    console.error('❌ Error en init():', err);
+    // Fallback: mostrar algo aunque sea
+    State.names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
+    State.config = { leaderPin: '1234' };
+    render('role');
+  }
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-with-logout";
+const APP_VERSION = "2026-08-24-restored-fixed";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1532,7 +1545,17 @@ async function openGirlModal(id, dateStr){
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
-init();
+
+// MONITOR DE CARGA - Mostrar progreso
+document.body.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#FDF5F8;display:flex;align-items:center;justify-content:center;font-family:Inter;color:#93547A;"><div style="text-align:center;"><div style="font-size:24px;margin-bottom:20px;">🌸 Cargando Mi Devocional...</div><div style="font-size:14px;color:#D9B368;">Por favor espera...</div></div></div>';
+
+setTimeout(() => {
+  init().catch(err => {
+    console.error('❌ Error crítico:', err);
+    document.body.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#FDF5F8;display:flex;align-items:center;justify-content:center;font-family:Inter;"><div style="text-align:center;"><div style="color:#C97676;font-size:18px;margin-bottom:20px;">⚠️ Error al cargar</div><div style="color:#93547A;font-size:14px;margin-bottom:20px;">Por favor recarga la página</div><button onclick="location.reload()" style="background:#93547A;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Recargar</button></div></div></div>';
+  });
+}, 100);
+
 </script>
 </body>
 </html>
