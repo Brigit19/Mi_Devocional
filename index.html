@@ -525,7 +525,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-debug-tabs";
+const APP_VERSION = "2026-08-24-final";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1106,19 +1106,18 @@ async function renderTab(){
 /* --- TAB: HOY --- */
 async function renderTabHoy(){
   const body = $('#tabBody');
-  if(!body){
-    console.error('❌ #tabBody no encontrado');
-    return;
-  }
-  body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando...</div>';
+  if(!body) return;
+  body.innerHTML = '<div style="text-align:center;padding:30px;">Cargando...</div>';
   
-  if(!State.names || State.names.length === 0){
-    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">⚠️ Error: No hay señoritas cargadas</div>';
-    return;
-  }
-  
-  const today = todayStr();
-  const keys = await sList('registro:'+today+':');
+  try{
+    if(!State.names || State.names.length === 0){
+      body.innerHTML = '<div style="text-align:center;padding:30px;">No hay datos</div>';
+      return;
+    }
+    
+    const today = todayStr();
+    let keys = [];
+    try{ keys = await sList('registro:'+today+':'); }catch(e){ console.log('No hay registros hoy'); }
   const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
   const total = State.names.length;
   const yes = submittedIds.size;
@@ -1166,6 +1165,7 @@ function rosterRowHTML(n, has, mode, pct){
 
 /* --- TAB: RESUMEN --- */
 async function renderTabResumen(){
+  try{
   const body = $('#tabBody');
   if(!body){
     console.error('❌ #tabBody no encontrado');
