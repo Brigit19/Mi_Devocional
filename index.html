@@ -334,6 +334,30 @@
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(201, 118, 118, 0.4);
   }
+
+  
+  .logout-btn {
+    background: linear-gradient(135deg, #c97676, #d97676) !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 14px !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    transition: all 0.3s !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+  .logout-btn:active {
+    transform: scale(0.95) !important;
+  }
+  
+  .topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+  }
 </style>
 </head>
 <body>
@@ -748,6 +772,44 @@ function confirmLogout(){
     render('role');
   }
 }
+
+function ensureLogoutButton(){
+  let topbar = document.querySelector('.topbar');
+  
+  // Si no existe la topbar, crearla
+  if(!topbar){
+    const main = document.querySelector('main');
+    const screen = document.querySelector('.screen');
+    if(screen){
+      topbar = document.createElement('div');
+      topbar.className = 'topbar';
+      topbar.innerHTML = `
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div class="brand-text">Mi Devocional<small>Ministerio Juvenil</small></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
+          <button class="logout-btn" id="logout">🚪 Salir</button>
+        </div>
+      `;
+      screen.insertBefore(topbar, screen.firstChild);
+    }
+  }
+  
+  // Asegurar que los botones funcionen
+  const historyBtn = document.getElementById('historyBtn');
+  if(historyBtn){
+    historyBtn.onclick = ()=>render('girlHistory');
+  }
+  
+  const logoutBtn = document.getElementById('logout');
+  if(logoutBtn){
+    logoutBtn.onclick = ()=>confirmLogout();
+  }
+}
+
+// Llamar esta función después de cada render
 async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   
