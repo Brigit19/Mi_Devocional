@@ -320,7 +320,7 @@
 
   .logout-btn {
     background: linear-gradient(135deg, var(--danger), #d97676);
-    color: white;
+    color: white !important;
     border: none;
     padding: 10px 16px;
     border-radius: 8px;
@@ -328,6 +328,7 @@
     cursor: pointer;
     font-size: 14px;
     transition: all 0.3s;
+    display: inline-block !important;
   }
   .logout-btn:hover {
     transform: scale(1.05);
@@ -886,7 +887,7 @@ async function renderGirlHome(){
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
-          <button class="logout-btn" id="logout">🚪 Cerrar sesión</button>
+          <button class="logout-btn" id="logout">🚪 Salir</button>
         </div>
       </div>
       <main></main>` + screen.innerHTML;
@@ -894,7 +895,19 @@ async function renderGirlHome(){
   }
 
   document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
-  document.getElementById('logout').onclick = ()=>confirmLogout();
+  
+  // Asegurar que el logout siempre funcione
+  const logoutBtn = document.getElementById('logout');
+  if(logoutBtn){
+    logoutBtn.onclick = ()=>confirmLogout();
+  }
+  
+  // Extra: Buscar el logout en cualquier lugar del DOM como backup
+  setTimeout(()=>{
+    document.querySelectorAll('[id="logout"]').forEach(btn=>{
+      btn.onclick = ()=>confirmLogout();
+    });
+  }, 100);
 }
 async function computeAndSaveStats(userId, dateStr){
   const prevStreak = (await sGet('streak:'+userId)) || { racha:0, ultimaFecha:null };
