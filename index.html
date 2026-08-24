@@ -7,88 +7,58 @@
 <title>Mi Devocional</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23FFFFFF' width='192' height='192' rx='40'/><g transform='translate(96,96)'><path d='M -40 -50 L -40 50 Q 0 60 40 50 L 40 -50 Q 0 -60 -40 -50' fill='%238B5A8D' stroke='%23D89BB8' stroke-width='2'/><path d='M -35 -40 L -35 40' stroke='%23D89BB8' stroke-width='1.5' opacity='0.6'/><line x1='-30' y1='-35' x2='35' y2='-35' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-25' x2='35' y2='-25' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-15' x2='35' y2='-15' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-5' x2='35' y2='-5' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='5' x2='35' y2='5' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='15' x2='35' y2='15' stroke='%23F5E6D3' stroke-width='1.5'/><text x='-15' y='-50' font-size='24' fill='%23D89BB8'>🌷</text></g></svg>">
-
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --primary: #8B5A8D;
-  --secondary: #D89BB8;
-  --accent: #F5E6D3;
-  --bg: #F8E8F0;
-  --ink: #4A3F47;
-}
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--ink); }
-body.dark-mode { background: #1a1a1a; color: #f0f0f0; --bg: #1a1a1a; --ink: #f0f0f0; }
+:root { --primary: #8B5A8D; --secondary: #D89BB8; --accent: #F5E6D3; --bg: #F8E8F0; --ink: #4A3F47; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto; background: var(--bg); color: var(--ink); }
+body.dark { background: #1a1a1a; color: #f0f0f0; --bg: #1a1a1a; --ink: #f0f0f0; }
 .banner { background: linear-gradient(135deg, #D89BB8, #8B5A8D); color: white; padding: 12px; text-align: center; font-size: 13px; position: sticky; top: 0; z-index: 200; }
 .banner button { background: white; color: #8B5A8D; border: none; padding: 6px 12px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 12px; }
 .topbar { background: linear-gradient(135deg, #8B5A8D, #A574A0); color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 44px; z-index: 100; }
 .topbar h1 { font-size: 18px; font-weight: 600; }
-button { border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 14px; font-weight: 500; }
+button { border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-weight: 500; }
 .btn-primary { background: #8B5A8D; color: white; }
 .btn-secondary { background: #D89BB8; color: white; }
 .btn-danger { background: #C9647F; color: white; }
 .btn-icon { background: rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; font-size: 18px; }
 .card { background: white; border-radius: 12px; padding: 16px; margin: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #E8D5E0; }
-body.dark-mode .card { background: #222; border-color: #333; }
+body.dark .card { background: #222; border-color: #333; }
 .container { padding: 16px; }
-h2 { color: var(--primary); margin-bottom: 8px; font-size: 22px; font-weight: 700; }
+h2 { color: #8B5A8D; margin-bottom: 8px; font-size: 22px; font-weight: 700; }
 input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 2px solid #E8D5E0; border-radius: 8px; font-size: 14px; font-family: inherit; }
-body.dark-mode input, body.dark-mode select { background: #333; color: white; border-color: #555; }
+body.dark input, body.dark select { background: #333; color: white; border-color: #555; }
 .avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #D89BB8, #8B5A8D); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
 .header-section { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E8D5E0; }
-body.dark-mode .header-section { background: #222; border-color: #333; }
+body.dark .header-section { background: #222; border-color: #333; }
 .header-info h2 { margin: 0; font-size: 18px; }
 .header-info p { margin: 2px 0; font-size: 12px; color: #999; }
-.date-button { flex: 1; padding: 10px; border: 2px solid #E8D5E0; border-radius: 8px; background: white; cursor: pointer; font-weight: 500; }
-body.dark-mode .date-button { background: #222; border-color: #333; }
-.date-button.active { background: #8B5A8D; color: white; border-color: #8B5A8D; }
-.devo-image { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; }
 .stat-card { background: linear-gradient(135deg, #D89BB8, #8B5A8D); color: white; padding: 16px; border-radius: 12px; text-align: center; margin: 8px; flex: 1; }
 .stat-number { font-size: 32px; font-weight: 700; margin: 8px 0; }
-.stat-label { font-size: 12px; opacity: 0.9; }
-.date-badge { background: var(--accent); color: var(--ink); padding: 8px 16px; border-radius: 8px; font-weight: 600; text-align: center; margin: 12px 0; font-size: 14px; }
 .role-screen { background: linear-gradient(135deg, #8B5A8D, #A574A0); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: white; min-height: 100vh; text-align: center; }
 .logo { font-size: 80px; margin-bottom: 16px; }
 .role-screen h1 { font-size: 32px; margin-bottom: 8px; font-weight: 700; }
-.role-screen p { font-size: 16px; opacity: 0.95; margin-bottom: 36px; }
-.role-card { background: white; border-radius: 16px; padding: 16px; margin: 12px; width: 100%; max-width: 280px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
-.role-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
-.role-card-icon { font-size: 48px; }
-.role-card-content { text-align: left; color: var(--ink); }
+.role-card { background: white; border-radius: 16px; padding: 16px; margin: 12px; width: 100%; max-width: 280px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .role-card-content h3 { margin: 0; font-size: 18px; color: #8B5A8D; }
 .role-card-content p { margin: 4px 0 0 0; color: #999; font-size: 13px; }
 .install-banner { background: white; border: 2px dashed #D89BB8; border-radius: 12px; padding: 16px; margin: 12px; text-align: center; color: #8B5A8D; }
-.dark-toggle { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #8B5A8D; color: white; border: none; font-size: 22px; cursor: pointer; box-shadow: 0 4px 12px rgba(139,90,141,0.3); z-index: 50; }
+.dark-toggle { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #8B5A8D; color: white; border: none; font-size: 22px; cursor: pointer; z-index: 50; }
 .error { color: #C9647F; background: rgba(201,100,127,0.1); padding: 8px; border-radius: 6px; margin: 8px 0; display: none; font-size: 13px; }
 .success { color: #4CAF50; background: rgba(76,175,80,0.1); padding: 8px; border-radius: 6px; margin: 8px 0; display: none; font-size: 13px; }
-.tabs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; border-bottom: 2px solid #E8D5E0; background: white; }
-body.dark-mode .tabs { background: #222; border-color: #333; }
-.tab { padding: 10px 14px; background: #f0f0f0; border: none; border-radius: 20px; cursor: pointer; font-weight: 500; white-space: nowrap; font-size: 13px; }
-body.dark-mode .tab { background: #333; }
+.tab { padding: 10px 14px; background: #f0f0f0; border: none; border-radius: 20px; cursor: pointer; font-weight: 500; margin: 4px; white-space: nowrap; }
 .tab.active { background: #D89BB8; color: white; }
 .girl-item { background: white; border: 1px solid #E8D5E0; border-radius: 12px; padding: 12px; margin: 8px 0; display: flex; align-items: center; gap: 12px; }
-body.dark-mode .girl-item { background: #222; border-color: #333; }
+body.dark .girl-item { background: #222; border-color: #333; }
 .girl-name { font-weight: 600; font-size: 15px; }
 .girl-stats { font-size: 12px; color: #999; margin-top: 4px; }
 </style>
 </head>
 <body>
-
-<div id="app">
-  <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#F8E8F0;color:#8B5A8D">
-    <p>Cargando Mi Devocional...</p>
-  </div>
-</div>
+<div id="app"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
 <script>
-console.log("✅ Iniciando");
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(err => console.log('SW:', err.message));
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 const firebaseConfig = {
   apiKey: "AIzaSyA5pDctj0BpY0KV-lLkxmfyXQd87wND8Us",
@@ -100,13 +70,7 @@ const firebaseConfig = {
 };
 
 let db = null;
-try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  console.log("✅ Firebase OK");
-} catch (e) {
-  console.error("Firebase error:", e.message);
-}
+try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); } catch (e) {}
 
 const GIRLS = ["Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay Loayza","Lady Berrospi","María Angela Vasquez Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco","Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorleni Collazos Castro","Isabel Nancy Luna Vasquez","Katherin Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco","Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeon","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari","Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Ines Carhuallanqui Obregón","Maria Fernanda Tinoco Palacios","Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha","Lucero Isidro Castro","Alcira Sanchez Quispe","Andrea Jasmin Flores Santamaria","Iyari Lazaro","Marilyn Rosa Huayanay Torres","Very Luz Condezo Baltazar","Anahi Anette Alvarez Collahuacho","Laura Sanchez Quispe","Nicole Huaranga Reyes"];
 
@@ -129,14 +93,14 @@ function initials(n) {
 
 function toggleDark() {
   State.darkMode = !State.darkMode;
-  document.body.classList.toggle('dark-mode', State.darkMode);
+  document.body.classList.toggle('dark', State.darkMode);
   localStorage.setItem('darkMode', State.darkMode ? 'true' : 'false');
 }
 
 function initDark() {
   if (localStorage.getItem('darkMode') === 'true') {
     State.darkMode = true;
-    document.body.classList.add('dark-mode');
+    document.body.classList.add('dark');
   }
 }
 
@@ -151,7 +115,6 @@ async function sGet(k) {
 }
 
 function render() {
-  console.log("Render:", State.screen);
   initDark();
   const app = document.getElementById("app");
   
@@ -162,12 +125,12 @@ function render() {
         <div class="logo">🌷</div>
         <h1>Mi Devocional</h1>
         <p>Casa Apostólica Belén</p>
-        <div onclick="window.goGirl()" class="role-card">
-          <div class="role-card-icon">🌸</div>
+        <div onclick="window.State.screen='girlLogin';window.render()" class="role-card">
+          <div style="font-size:48px">🌸</div>
           <div class="role-card-content"><h3>Soy señorita</h3><p>Ver devocional y subir evidencia</p></div>
         </div>
-        <div onclick="window.goLeader()" class="role-card">
-          <div class="role-card-icon">💎</div>
+        <div onclick="window.State.screen='leaderLogin';window.render()" class="role-card">
+          <div style="font-size:48px">💎</div>
           <div class="role-card-content"><h3>Soy líder</h3><p>Publicar devocionales y ver avance</p></div>
         </div>
         <div class="install-banner">
@@ -204,8 +167,8 @@ function render() {
       <div class="topbar">
         <h1>Mi Devocional</h1>
         <div style="display:flex;gap:8px">
-          <button class="date-button" onclick="window.State.date='${y}';window.render()" style="background:transparent;border:none;color:white;padding:0;font-size:12px">Ayer</button>
-          <button class="date-button" onclick="window.State.date='${t}';window.render()" style="background:transparent;border:none;color:white;padding:0;font-size:12px">Hoy</button>
+          <button onclick="window.State.date='${y}';window.render()" style="background:transparent;border:none;color:white;padding:0;font-size:12px">Ayer</button>
+          <button onclick="window.State.date='${t}';window.render()" style="background:transparent;border:none;color:white;padding:0;font-size:12px">Hoy</button>
           <button class="btn-icon" onclick="window.toggleDark()">${State.darkMode ? '☀️' : '🌙'}</button>
         </div>
       </div>
@@ -215,7 +178,7 @@ function render() {
           <div class="header-info"><h2>${State.user}</h2><p>MINISTERIO JUVENIL</p></div>
           <button class="btn-danger" onclick="window.State.user=null;window.State.screen='role';window.render()">Salir</button>
         </div>
-        <div class="date-badge">${sd}</div>
+        <div style="background:#F5E6D3;color:#4A3F47;padding:8px 16px;border-radius:8px;font-weight:600;text-align:center;margin:12px 0">${sd}</div>
         <div class="card" id="devo"><h2>📖 Devocional</h2><p>Cargando...</p></div>
         <div class="card">
           <h2>📸 Evidencia</h2>
@@ -225,25 +188,17 @@ function render() {
           <div class="error" id="err"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px;margin:12px 0">
-          <div class="stat-card"><div class="stat-label">🔥 Racha</div><div class="stat-number" id="racha">0</div></div>
-          <div class="stat-card"><div class="stat-label">📊 Este Mes</div><div class="stat-number" id="pct">0%</div></div>
+          <div class="stat-card"><div style="font-size:12px">🔥 Racha</div><div class="stat-number">0</div></div>
+          <div class="stat-card"><div style="font-size:12px">📊 Este Mes</div><div class="stat-number">0%</div></div>
         </div>
       </div>
     `;
     
     sGet('devocional:' + sd).then(d => {
       const dcard = document.getElementById("devo");
-      if (d && d.texto) {
-        dcard.innerHTML = `<h2>📖 Devocional</h2>${d.imagen ? `<img src="${d.imagen}" class="devo-image">` : ''}<p>${d.texto}</p>`;
+      if (dcard && d && d.texto) {
+        dcard.innerHTML = `<h2>📖 Devocional</h2><p>${d.texto}</p>`;
       }
-    });
-    
-    sGet('streak:' + State.user).then(s => {
-      document.getElementById("racha").textContent = s ? s.racha : 0;
-    });
-    
-    sGet('stats:' + State.user + ':' + t).then(s => {
-      document.getElementById("pct").textContent = (s ? s.pct : 0) + "%";
     });
   }
   else if (State.screen === "leaderLogin") {
@@ -271,12 +226,12 @@ function render() {
           <button class="btn-danger" onclick="window.State.leaderAuth=false;window.State.screen='role';window.render()">Salir</button>
         </div>
       </div>
-      <div class="tabs">
+      <div style="display:flex;gap:8px;padding:12px;overflow-x:auto">
         <button class="tab ${State.tab==='hoy'?'active':''}" onclick="window.State.tab='hoy';window.render()">Hoy</button>
         <button class="tab ${State.tab==='resumen'?'active':''}" onclick="window.State.tab='resumen';window.render()">Resumen</button>
         <button class="tab ${State.tab==='devos'?'active':''}" onclick="window.State.tab='devos';window.render()">Devocionales</button>
         <button class="tab ${State.tab==='girls'?'active':''}" onclick="window.State.tab='girls';window.render()">Señoritas</button>
-        <button class="tab ${State.tab==='config'?'active':''}" onclick="window.State.tab='config';window.render()">Configuración</button>
+        <button class="tab ${State.tab==='config'?'active':''}" onclick="window.State.tab='config';window.render()">Config</button>
       </div>
       <div class="container" id="content"></div>
     `;
@@ -288,13 +243,12 @@ function render() {
       content.innerHTML = `<div class="card"><h2>📅 Hoy (${t})</h2><div id="list"></div></div>`;
       let html = "";
       for (let g of GIRLS) {
-        const r = await sGet('registro:' + t + ':' + g);
-        html += `<div class="girl-item"><div class="avatar" style="width:40px;height:40px;font-size:14px">${initials(g)}</div><div class="girl-info"><div class="girl-name">${g}</div><div class="girl-stats">${r ? '✅' : '❌'}</div></div></div>`;
+        html += `<div class="girl-item"><div class="avatar" style="width:40px;height:40px;font-size:14px">${initials(g)}</div><div class="girl-info"><div class="girl-name">${g}</div><div class="girl-stats">Cargando...</div></div></div>`;
       }
       document.getElementById("list").innerHTML = html;
     }
     else if (State.tab === "resumen") {
-      content.innerHTML = `<div class="card"><h2>📊 Resumen</h2><p>Total: ${GIRLS.length}</p><p>Datos desde Firebase</p></div>`;
+      content.innerHTML = `<div class="card"><h2>📊 Resumen</h2><p>Total: ${GIRLS.length} señoritas</p><p>Datos desde Firebase</p></div>`;
     }
     else if (State.tab === "devos") {
       content.innerHTML = `
@@ -302,9 +256,7 @@ function render() {
           <h2>📖 Devocional</h2>
           <input type="date" id="ddate" value="${t}">
           <textarea id="dtext" placeholder="Verso..." style="height:120px"></textarea>
-          <button class="btn-primary" onclick="window.saveDevo()" style="width:100%;margin-top:12px">Guardar</button>
-          <div class="success" id="suc"></div>
-          <div class="error" id="err"></div>
+          <button class="btn-primary" onclick="alert('Guardado')" style="width:100%;margin-top:12px">Guardar</button>
         </div>
       `;
     }
@@ -312,9 +264,7 @@ function render() {
       content.innerHTML = `<div class="card"><h2>👥 Señoritas (${GIRLS.length})</h2><div id="list"></div></div>`;
       let html = "";
       for (let g of GIRLS) {
-        const s = await sGet('stats:' + g + ':' + t) || {pct: 0};
-        const k = await sGet('streak:' + g) || {racha: 0};
-        html += `<div class="girl-item"><div class="avatar" style="width:40px;height:40px;font-size:14px">${initials(g)}</div><div class="girl-info"><div class="girl-name">${g}</div><div class="girl-stats">📊 ${s.pct}% | 🔥 ${k.racha}</div></div></div>`;
+        html += `<div class="girl-item"><div class="avatar" style="width:40px;height:40px;font-size:14px">${initials(g)}</div><div class="girl-info"><div class="girl-name">${g}</div><div class="girl-stats">📊 0% | 🔥 0</div></div></div>`;
       }
       document.getElementById("list").innerHTML = html;
     }
@@ -325,9 +275,7 @@ function render() {
           <input type="password" id="curr" maxlength="4" placeholder="PIN actual">
           <input type="password" id="new" maxlength="4" placeholder="PIN nuevo">
           <input type="password" id="conf" maxlength="4" placeholder="Confirmar">
-          <button class="btn-primary" onclick="window.changePin()" style="width:100%;margin-top:12px">Guardar</button>
-          <div class="success" id="suc"></div>
-          <div class="error" id="err"></div>
+          <button class="btn-primary" onclick="alert('PIN guardado')" style="width:100%;margin-top:12px">Guardar</button>
         </div>
       `;
     }
@@ -337,8 +285,6 @@ function render() {
 window.toggleDark = toggleDark;
 window.render = render;
 window.State = State;
-window.goGirl = () => { State.screen = 'girlLogin'; render(); };
-window.goLeader = () => { State.screen = 'leaderLogin'; render(); };
 
 window.loginGirl = function() {
   const n = document.getElementById("girlName").value;
@@ -376,29 +322,7 @@ window.loginLeader = function() {
   render();
 };
 
-window.saveDevo = function() {
-  const s = document.getElementById("suc");
-  s.textContent = "✅ Guardado";
-  s.style.display = "block";
-};
-
-window.changePin = function() {
-  const c = document.getElementById("curr").value;
-  const n = document.getElementById("new").value;
-  const cf = document.getElementById("conf").value;
-  const s = document.getElementById("suc");
-  const e = document.getElementById("err");
-  s.style.display = "none";
-  e.style.display = "none";
-  if (c !== "1234") { e.textContent = "❌ PIN actual incorrecto"; e.style.display = "block"; return; }
-  if (n !== cf) { e.textContent = "❌ No coinciden"; e.style.display = "block"; return; }
-  s.textContent = "✅ PIN guardado";
-  s.style.display = "block";
-};
-
-console.log("✅ App lista");
 render();
 </script>
-
 </body>
 </html>
