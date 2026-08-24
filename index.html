@@ -367,14 +367,16 @@ async function sList(prefix){
 
 /* ================= DEFAULT ROSTER ================= */
 const DEFAULT_NAMES = [
-"Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay",
-"Lady Berrospi","María Angela Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco",
-"Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorlene Collazos Castro","Isabel Nancy Luna Vásquez",
-"Katherine Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco",
-"Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeón","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari",
-"Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Carhuallanqui Obregón","Rachell Sulca",
-"Maria Fernanda Tinoco Palacios","Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha",
-"Lucero Isidro Castro","Alcira Sánchez Quispe"
+  "Arianna Nicolle Rojas Camasca",   "Danitza Belen Cordero Mercado",   "Estefany Collazos",   "Juana Huayanay Loayza",
+  "Lady Berrospi",   "María Angela Vasquez Nolasco",   "Marjorie Villalba Salazar",   "Marisol Justiniano Tinoco",
+  "Marlú Milagros Escobar Salazar",   "Sarai Tania Palomino",   "Yorleni Collazos Castro",   "Isabel Nancy Luna Vasquez",
+  "Katherin Yocelinda Meza Alanya",   "Camila Rubino",   "Erika Minaya Tolentino",   "Belen Porras Blanco",
+  "Vania Noemi Canchanya Tinoco",   "Yamile Mireya Inga Baldeon",   "Nayra Stefania Gutierrez Flores",   "Heidy Rojas Ahuanari",
+  "Zayuri Esteban Laura",   "Thania Alegre Castillo",   "Pamela Ines Carhuallanqui Obregón",   "Maria Fernanda Tinoco Palacios",
+  "Valery Zulay Ipurre Escalera",   "Ruth Keren Ramos Mayta",   "Anny Karen Sotacuro Quicha",   "Lucero Isidro Castro",
+  "Alcira Sanchez Quispe",   "Andrea Jasmin Flores Santamaria",   "Iyari Lazaro",   "Marilyn Rosa Huayanay Torres",
+  "Very Luz Condezo Baltazar",   "Anahi Anette Alvarez Collahuacho",   "Laura Sanchez Quispe",   "Nicole Huaranga Reyes"
+
 ];
 
 function slugId(name, idx){
@@ -397,6 +399,9 @@ async function ensureSeed(){
 
 /* ================= APP STATE ================= */
 const State = { screen:'loading', names:[], config:{}, currentUser:null, leaderAuthed:false, tab:'hoy', filter:'todas' };
+// Estado para día seleccionado en señorita
+State.selectedDay = null; // 'hoy' o 'ayer'
+
 const $ = sel => document.querySelector(sel);
 const main = document.getElementById('main');
 const appEl = document.getElementById('app');
@@ -495,7 +500,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-restored";
+const APP_VERSION = "2026-08-24-ayer-hoy";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -690,29 +695,37 @@ async function renderGirlHistory(){
   document.getElementById('backBtn').onclick = ()=> renderGirlHome();
 }
 
+
 async function renderGirlHome(){
-  main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   const today = todayStr();
-  const devo = await sGet('devocional:'+today);
+  const yesterday = addDaysToStr(today, -1);
+  
+  // Si no hay día seleccionado, usar hoy por defecto
+  if(!State.selectedDay) State.selectedDay = today;
+  
+  const selectedDate = State.selectedDay;
+  const devo = await sGet('devocional:'+selectedDate);
   const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
   const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
   const stats = { racha: streak.racha, totalM: monthStats.totalM };
-  const regKey = 'registro:'+today+':'+State.currentUser.id;
-  const registroHoy = await sGet(regKey);
-  const deadline = (await sGet('deadline:'+today)) || addDaysToStr(today, 1);
-  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(today+'T00:00:00'))/86400000);
+  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
+  const registroSelected = await sGet(regKey);
+  const deadline = (await sGet('deadline:'+selectedDate)) || addDaysToStr(selectedDate, 1);
+  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(selectedDate+'T00:00:00'))/86400000);
+  
   let deadlineColor = 'var(--success)';
   let deadlineIcon = '✅';
   if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
   else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
 
   const user = State.currentUser;
+  
   main.innerHTML = `
   <div class="screen">
     <div class="topbar">
       <div class="brand">
         <div class="brand-mark"></div>
-        <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
+        <div class="brand-text">\${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
@@ -720,160 +733,107 @@ async function renderGirlHome(){
       </div>
     </div>
     <main>
-      <span class="date-chip">${fmtDateLong(today)}</span>
-      ${devo ? `
+      <!-- BOTONES AYER/HOY -->
+      <div style="display:flex;gap:8px;margin:16px 0;justify-content:center;">
+        <button class="day-btn" data-day="${yesterday}" style="padding:10px 20px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;color:var(--ink);transition:.2s;\${selectedDate === yesterday ? 'border-color:var(--primary-dark);color:var(--primary-dark);background:var(--gold-soft);' : ''}" id="btnAyer">
+          Ayer<br><small style="font-size:11px;font-weight:400;">\${fmtDateLong(yesterday).split('de')[1].trim().split('de')[0]}</small>
+        </button>
+        <button class="day-btn" data-day="${today}" style="padding:10px 20px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;color:var(--ink);transition:.2s;\${selectedDate === today ? 'border-color:var(--primary-dark);color:var(--primary-dark);background:var(--gold-soft);' : ''}" id="btnHoy">
+          Hoy<br><small style="font-size:11px;font-weight:400;">\${fmtDateLong(today).split('de')[1].trim().split('de')[0]}</small>
+        </button>
+      </div>
+      
+      <span class="date-chip">\${fmtDateLong(selectedDate)}</span>
+      
+      \${devo ? \`
       <div class="devo-card">
-        ${devo.imagen ? `<img class="devo-img" src="${devo.imagen}">` : ''}
-        <p class="devo-text">${devo.texto || ''}</p>
-      </div>` : `
+        \${devo.imagen ? \`<img class="devo-img" src="\${devo.imagen}">\` : ''}
+        <p class="devo-text">\${devo.texto || ''}</p>
+      </div>\` : \`
       <div class="card empty-devo">
         <div class="glyph">🕊️</div>
-        <p>Aún no se publica el devocional de hoy.<br>Vuelve un poco más tarde.</p>
-      </div>`}
+        <p>Aún no se publica el devocional.<br>Vuelve un poco más tarde.</p>
+      </div>\`}
 
       <div class="streak-row">
-        <div class="stat-pill"><div class="num">${stats.racha}🔥</div><div class="lbl">Racha</div></div>
-        <div class="stat-pill"><div class="num">${stats.totalM}</div><div class="lbl">Días este mes</div></div>
+        <div class="stat-pill"><div class="num">\${stats.racha}🔥</div><div class="lbl">Racha</div></div>
+        <div class="stat-pill"><div class="num">\${stats.totalM}</div><div class="lbl">Días este mes</div></div>
       </div>
 
-      <div style="background:${deadlineColor}20;border:1.5px solid ${deadlineColor};border-radius:12px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:20px;">${deadlineIcon}</span>
+      <div style="background:\${deadlineColor}20;border:1.5px solid \${deadlineColor};border-radius:12px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">\${deadlineIcon}</span>
         <div>
-          <p style="margin:0;font-weight:600;color:${deadlineColor};font-size:14px;">Plazo: ${fmtDateLong(deadline)}</p>
-          <p style="margin:2px 0;font-size:12px;color:${deadlineColor}80;">${daysUntilDeadline > 1 ? `Faltan ${daysUntilDeadline} días` : daysUntilDeadline === 1 ? 'Último día ⚠️' : 'Plazo vencido'}</p>
+          <p style="margin:0;font-weight:600;color:\${deadlineColor};font-size:14px;">Plazo: \${fmtDateLong(deadline)}</p>
+          <p style="margin:2px 0;font-size:12px;color:\${deadlineColor}80;">\${daysUntilDeadline > 1 ? \`Faltan \${daysUntilDeadline} días\` : daysUntilDeadline === 1 ? 'Último día ⚠️' : 'Plazo vencido'}</p>
         </div>
       </div>
 
-      ${devo ? `
-      <div class="seal-zone">
-        <button class="seal ${registroHoy?'done':''}" id="sealBtn">
-          <span class="glyph">${registroHoy?'✏️':'📷'}</span>
-          <span class="cap">${registroHoy?'Editar evidencia':'Subir evidencia'}</span>
-        </button>
-        <p class="seal-hint">${registroHoy? '¿Quieres cambiar tus fotos? Toca Editar' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
-        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
-        ${registroHoy ? renderEvidenceGallery(registroHoy) : ''}
-      </div>` : ''}
+      <button class="seal \${registroSelected?'done':''}" id="sealBtn">
+        <span class="glyph">\${registroSelected?'✏️':'📷'}</span>
+        <span class="cap">\${registroSelected?'Editar evidencia':'Subir evidencia'}</span>
+      </button>
+      <p class="seal-hint">\${registroSelected? '¿Quieres cambiar tus fotos? Toca Editar' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
+      \${registroSelected ? renderEvidenceGallery(registroSelected) : ''}
     </main>
-  </div>`;
+  </div>\`;
 
-  $('#logout').onclick = ()=>{ State.currentUser=null; render('role'); };
-  $('#historyBtn').onclick = ()=>{ renderGirlHistory(); };
-  const sealBtn = $('#sealBtn');
-  if(sealBtn){
-    sealBtn.onclick = ()=> $('#fileInput').click();
-    $('#fileInput').onchange = async (e)=>{
-      const files = Array.from(e.target.files).slice(0,5); if(!files.length) return;
-      sealBtn.querySelector('.cap').textContent = 'Guardando...';
+  // Event listeners
+  document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
+  document.getElementById('logout').onclick = ()=>confirmLogout();
+  
+  // Botones de día
+  document.getElementById('btnAyer').onclick = ()=>{
+    State.selectedDay = yesterday;
+    renderGirlHome();
+  };
+  
+  document.getElementById('btnHoy').onclick = ()=>{
+    State.selectedDay = today;
+    renderGirlHome();
+  };
+  
+  // Subir/editar evidencia
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.multiple = true;
+  fileInput.id = 'girlFileInput';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
+  document.getElementById('sealBtn').onclick = ()=> fileInput.click();
+  
+  fileInput.onchange = async (e)=>{
+    const files = Array.from(e.target.files);
+    if(files.length === 0) return;
+    if(files.length > 5){ toast('Máximo 5 fotos'); return; }
+    
+    const sealBtn = document.getElementById('sealBtn');
+    sealBtn.textContent = 'Cargando...';
+    sealBtn.disabled = true;
+    
+    try{
       const fotos = [];
-      for(const f of files){ fotos.push(await compressImage(f, 700, 0.6)); }
-      const registro = { estado:'M', fotos, hora: new Date().toISOString() };
-      await sSet(regKey, registro);
-      const newStats = await computeAndSaveStats(user.id, today);
-      toast(`¡Evidencia ${registroHoy ? 'actualizada' : 'registrada'}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
+      for(const f of files){
+        fotos.push(await compressImage(f, 700, 0.6));
+      }
+      
+      await sSet('registro:'+selectedDate+':'+State.currentUser.id, {
+        estado: 'M',
+        fotos: fotos,
+        hora: new Date().toISOString()
+      });
+      
+      await computeAndSaveStats(State.currentUser.id, selectedDate);
+      toast(\`¡Evidencia \${registroSelected ? 'actualizada' : 'registrada'}! 🌸 (\${fotos.length} foto\${fotos.length>1?'s':''})\`);
       renderGirlHome();
-    };
-  }
-}
-
-function openImageViewer(imageSrc){
-  const overlay = document.createElement('div');
-  overlay.className = 'image-viewer-overlay';
-  
-  let scale = 1;
-  let offsetX = 0;
-  let offsetY = 0;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  
-  overlay.innerHTML = `
-    <button class="image-viewer-close">✕</button>
-    <div class="image-viewer-container">
-      <img class="image-viewer-img" src="${imageSrc}" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
-      <div class="image-viewer-controls">
-        <button class="image-viewer-btn" id="zoomOut">🔍−</button>
-        <button class="image-viewer-btn" id="zoomIn">🔍+</button>
-        <button class="image-viewer-btn" id="downloadBtn">📥 Descargar</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(overlay);
-  
-  const img = overlay.querySelector('.image-viewer-img');
-  const container = overlay.querySelector('.image-viewer-container');
-  
-  // Zoom
-  overlay.querySelector('#zoomIn').onclick = ()=>{
-    scale = Math.min(scale + 0.2, 3);
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
+    } catch(err){
+      console.error('Error:', err);
+      toast('Error al subir: ' + err.message);
+      sealBtn.textContent = 'Subir evidencia';
+      sealBtn.disabled = false;
+    }
   };
-  
-  overlay.querySelector('#zoomOut').onclick = ()=>{
-    scale = Math.max(scale - 0.2, 1);
-    offsetX = 0; offsetY = 0;
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  // Download
-  overlay.querySelector('#downloadBtn').onclick = ()=>{
-    const link = document.createElement('a');
-    link.href = imageSrc;
-    link.download = 'evidencia_' + new Date().getTime() + '.jpg';
-    link.click();
-  };
-  
-  // Drag to move
-  img.onmousedown = (e)=>{
-    if(scale === 1) return;
-    isDragging = true;
-    dragStartX = e.clientX - offsetX;
-    dragStartY = e.clientY - offsetY;
-    img.classList.add('dragging');
-  };
-  
-  document.onmousemove = (e)=>{
-    if(!isDragging) return;
-    offsetX = e.clientX - dragStartX;
-    offsetY = e.clientY - dragStartY;
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  document.onmouseup = ()=>{
-    isDragging = false;
-    img.classList.remove('dragging');
-  };
-  
-  // Close
-  overlay.querySelector('.image-viewer-close').onclick = ()=> overlay.remove();
-  overlay.onclick = (e)=>{ if(e.target === overlay) overlay.remove(); };
-}
-
-function renderEvidenceGallery(reg){
-  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
-  if(!fotos.length) return '';
-  const soloClass = fotos.length===1 ? 'solo' : '';
-  return `<div class="thumb-grid">${fotos.map(f=>`<img class="${soloClass}" src="${f}" onclick="openImageViewer('${f}')" style="cursor:pointer;transition:.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">`).join('')}</div>`;
-}
-
-function compressImage(file, maxW=800, quality=0.65){
-  return new Promise((resolve)=>{
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      const img = new Image();
-      img.onload = ()=>{
-        const scale = Math.min(1, maxW/img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width*scale; canvas.height = img.height*scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
 }
 
 async function computeAndSaveStats(userId, dateStr){
@@ -1051,7 +1011,7 @@ function renderTab(){
 /* --- TAB: HOY --- */
 async function renderTabHoy(){
   const body = $('#tabBody');
-  body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando...</div>';
+  main.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando...</div>';
   const today = todayStr();
   const keys = await sList('registro:'+today+':');
   const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
@@ -1065,7 +1025,7 @@ async function renderTabHoy(){
   if(State.filter==='pendientes') rows = rows.filter(r=>!r.has);
   if(State.filter==='listas') rows = rows.filter(r=>r.has);
 
-  body.innerHTML = `
+  main.innerHTML = `
     <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div></div>
     <div class="filter-chips">
       <div class="chip ${State.filter==='todas'?'active':''}" data-f="todas">Todas</div>
@@ -1102,7 +1062,7 @@ function rosterRowHTML(n, has, mode, pct){
 /* --- TAB: RESUMEN --- */
 async function renderTabResumen(){
   const body = $('#tabBody');
-  body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Calculando avance...</div>';
+  main.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Calculando avance...</div>';
   const today = new Date();
   const dim = daysInMonth(today.getFullYear(), today.getMonth()+1);
   const mKey = monthKey(todayStr());
@@ -1116,7 +1076,7 @@ async function renderTabResumen(){
   results.sort((a,b)=> a.pct-b.pct);
   const riesgo = results.filter(r=>r.pct<40).length;
 
-  body.innerHTML = `
+  main.innerHTML = `
     <div class="section-title"><div><h2>Resumen del mes</h2><p>${riesgo} señorita(s) con avance menor al 40%</p></div></div>
     <div id="resumenList">${results.map(r=>rosterRowHTML(r.n, null, 'resumen', r.pct)).join('')}</div>
   `;
@@ -1128,7 +1088,7 @@ async function renderTabResumen(){
 /* --- TAB: DEVOCIONALES --- */
 async function renderTabDevocionales(){
   const body = $('#tabBody');
-  body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando calendario...</div>';
+  main.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando calendario...</div>';
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth()+1;
   const monthPrefix = `devocional:${y}-${String(m).padStart(2,'0')}`;
@@ -1148,7 +1108,7 @@ async function renderTabDevocionales(){
     dots += `<div class="day-dot ${hasDevocional?'has':''} ${ds===selected?'selected':''} ${!canEdit && ds !== selected ? 'locked' : ''}" data-d="${ds}" data-editable="${canEdit}">${d}</div>`;
   }
 
-  body.innerHTML = `
+  main.innerHTML = `
     <div class="section-title"><div><h2>Devocionales del mes</h2><p>Toca un día para ver, publicar o editar plazo</p></div></div>
     <div class="day-list">${dots}</div>
     <div class="card">
@@ -1215,7 +1175,7 @@ async function renderTabSenoritas(){
   const activas = State.names.filter(n=>n.activa !== false);
   const inactivas = State.names.filter(n=>n.activa === false);
   
-  body.innerHTML = `
+  main.innerHTML = `
     <div class="section-title"><div><h2>Señoritas</h2><p>${activas.length} activas${inactivas.length > 0 ? ` · ${inactivas.length} inactivas` : ''}</p></div></div>
     
     <div class="card" style="margin-bottom:16px;">
@@ -1351,7 +1311,18 @@ async function openGirlModal(id, dateStr){
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
-init();
+// Llamar init con timeout de seguridad
+let initTimeout = setTimeout(()=>{
+  if(State.screen === 'loading'){
+    main.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--danger);"><p>⚠️ Error al cargar la app</p><p style="font-size:12px;color:var(--ink-soft);">Por favor recarga la página</p></div>';
+  }
+}, 8000);
+
+init().then(()=>clearTimeout(initTimeout)).catch(err=>{
+  console.error('Error en init:', err);
+  main.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--danger);"><p>⚠️ Error</p><p style="font-size:12px;color:var(--ink-soft);">' + err.message + '</p></div>';
+  clearTimeout(initTimeout);
+});
 </script>
 </body>
 </html>
