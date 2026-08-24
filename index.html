@@ -1178,7 +1178,6 @@ function rosterRowHTML(n, has, mode, pct){
 
 /* --- TAB: RESUMEN --- */
 async function renderTabResumen(){
-  try{
   const body = $('#tabBody');
   if(!body){
     console.error('❌ #tabBody no encontrado');
@@ -1395,63 +1394,168 @@ async function renderTabSenoritas(){
 }
 
 
-
-}
-}
-
 /* --- TAB: CONFIGURACIÓN --- */
 async function renderTabConfig(){
   const body = $('#tabBody');
-  if(!body) return;
   body.innerHTML = `
-    <div class="section-title"><h2>⚙️ Configuración</h2></div>
-    <div class="card" style="padding:20px;">
-      <h3>🔐 Cambiar PIN</h3>
-      <input id="cpPin" type="password" placeholder="PIN actual" maxlength="4" style="margin:10px 0;">
-      <input id="npPin" type="password" placeholder="PIN nuevo" maxlength="4" style="margin:10px 0;">
-      <input id="cnPin" type="password" placeholder="Confirmar" maxlength="4" style="margin:10px 0;">
-      <div id="cfgErr" style="color:red;display:none;margin:10px 0;"></div>
-      <button id="cfgBtn" style="width:100%;margin-top:10px;">💾 Guardar</button>
+    <div class="section-title"><div><h2>⚙️ Configuración</h2><p>Gestiona la configuración de la app</p></div></div>
+    
+    <div class="card" style="margin:16px 0;padding:16px;background:linear-gradient(135deg, #f5e6f0, white);border:2px solid var(--fuchsia);">
+      <h3 style="margin-top:0;color:var(--primary-dark);">🔐 Cambiar tu PIN de acceso</h3>
+      <p style="color:var(--ink-soft);font-size:13px;">Ingresa el PIN actual y elige uno nuevo para tu acceso como líder</p>
+      
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">🔓 PIN actual (el que usas ahora):</label>
+        <input type="password" id="currentPin" placeholder="Ej: 1234" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Verifica que sea correcto</p>
+      </div>
+      
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">✨ Nuevo PIN (que TÚ ELIJAS):</label>
+        <input type="password" id="newPin" placeholder="Ej: 5678" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Debe tener 4 dígitos numéricos</p>
+      </div>
+      
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">🔐 Confirma tu nuevo PIN:</label>
+        <input type="password" id="confirmPin" placeholder="Repite: 5678" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Repite exactamente el mismo PIN</p>
+      </div>
+      
+      <button id="changePinBtn" class="btn btn-primary" style="width:100%;padding:14px;background:linear-gradient(135deg, var(--primary-dark), #a85f8f);border:none;border-radius:8px;color:white;font-weight:bold;font-size:15px;cursor:pointer;">Cambiar a mi nuevo PIN</button>
+      <div id="pinMessage" style="margin-top:12px;padding:12px;border-radius:8px;text-align:center;font-size:13px;display:none;font-weight:600;"></div>
     </div>
   `;
-  const btn = $('#cfgBtn');
-  if(btn){
-    btn.onclick = async ()=>{
-      const curr = $('#cpPin').value.trim();
-      const newp = $('#npPin').value.trim();
-      const cnfm = $('#cnPin').value.trim();
-      const err = $('#cfgErr');
-      err.style.display = 'none';
-      if(curr !== State.config.leaderPin){
-        err.textContent = '❌ PIN incorrecto';
-        err.style.display = 'block';
-        return;
-      }
-      if(newp.length !== 4){
-        err.textContent = '❌ Debe tener 4 dígitos';
-        err.style.display = 'block';
-        return;
-      }
-      if(newp !== cnfm){
-        err.textContent = '❌ No coinciden';
-        err.style.display = 'block';
-        return;
-      }
-      State.config.leaderPin = newp;
-      await sSet('config', State.config);
-      err.textContent = '✅ Cambiado a: ' + newp;
-      err.style.color = 'green';
-      err.style.display = 'block';
-    };
-  }
+  
+  document.getElementById('changePinBtn').onclick = async ()=>{
+    const currentPin = document.getElementById('currentPin').value;
+    const newPin = document.getElementById('newPin').value;
+    const confirmPin = document.getElementById('confirmPin').value;
+    const msgDiv = document.getElementById('pinMessage');
+    
+    // Validaciones
+    if(!currentPin || !newPin || !confirmPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '⚠️ Completa TODOS los campos, por favor';
+      return;
+    }
+    
+    if(currentPin !== State.config.leaderPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ El PIN actual es incorrecto. Verifica e intenta de nuevo';
+      return;
+    }
+    
+    if(newPin.length !== 4 || !newPin.match(/^\d{4}$/)){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ El nuevo PIN debe tener EXACTAMENTE 4 dígitos';
+      return;
+    }
+    
+    if(newPin !== confirmPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ Los dos PINs nuevos NO coinciden. Verifica e intenta de nuevo';
+      return;
+    }
+    
+    if(newPin === currentPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--gold)20';
+      msgDiv.style.color = 'var(--gold)';
+      msgDiv.textContent = '⚠️ El nuevo PIN es igual al actual. Elige uno diferente';
+      return;
+    }
+    
+    // Guardar nuevo PIN
+    try {
+      await sSet('config', { leaderPin: newPin });
+      State.config.leaderPin = newPin;
+      
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--success)20';
+      msgDiv.style.color = 'var(--success)';
+      msgDiv.textContent = '✅ ¡¡¡Tu PIN ha sido cambiado exitosamente!!! Ahora usa: ' + newPin;
+      
+      // Limpiar campos
+      setTimeout(()=>{
+        document.getElementById('currentPin').value = '';
+        document.getElementById('newPin').value = '';
+        document.getElementById('confirmPin').value = '';
+      }, 3000);
+    } catch(err){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ Error al cambiar PIN. Intenta de nuevo';
+    }
+  };
 }
 
-// INICIALIZACIÓN
-console.log('✅ Script cargado y listo');
+/* --- MODAL: girl detail (leader) --- */
+async function openGirlModal(id, dateStr){
+  const n = State.names.find(x=>x.id===id);
+  const streak = (await sGet('streak:'+id)) || { racha:0 };
+  const monthStats = (await sGet('statsmonth:'+id+':'+monthKey(dateStr))) || { totalM:0 };
+  
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-height:80vh;overflow-y:auto;">
+      <button class="modal-close">×</button>
+      <h3>${n.nombre}</h3>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:0;">${monthStats.totalM} días presentados este mes · racha ${streak.racha}🔥</p>
+      
+      <label style="margin-top:16px;">Selecciona una fecha para ver evidencia:</label>
+      <input type="date" id="modalDatePicker" value="${dateStr}" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:16px;">
+      
+      <div id="modalEvidenceContent"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  
+  // Load evidence for selected date
+  async function loadEvidence(ds){
+    const reg = await sGet('registro:'+ds+':'+id);
+    const content = document.getElementById('modalEvidenceContent');
+    if(reg && (reg.fotos || reg.foto)){
+      content.innerHTML = `
+        ${renderEvidenceGallery(reg)}
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Subido: ${new Date(reg.hora).toLocaleString('es-PE')}</p>
+      `;
+    } else {
+      content.innerHTML = `<div class="lock-note">🕊️ Sin evidencia el ${fmtDateLong(ds)}.</div>`;
+    }
+  }
+  
+  await loadEvidence(dateStr);
+  
+  document.getElementById('modalDatePicker').onchange = (e)=>{
+    loadEvidence(e.target.value);
+  };
+  
+  overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+}
+
+
+// MONITOR DE CARGA - Mostrar progreso
+document.body.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#FDF5F8;display:flex;align-items:center;justify-content:center;font-family:Inter;color:#93547A;"><div style="text-align:center;"><div style="font-size:24px;margin-bottom:20px;">🌸 Cargando Mi Devocional...</div><div style="font-size:14px;color:#D9B368;">Por favor espera...</div></div></div>';
+
 setTimeout(() => {
-  console.log('✅ Inicializando app...');
-  init().catch(err => console.error('❌ Error:', err));
+  init().catch(err => {
+    console.error('❌ Error crítico:', err);
+    document.body.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#FDF5F8;display:flex;align-items:center;justify-content:center;font-family:Inter;"><div style="text-align:center;"><div style="color:#C97676;font-size:18px;margin-bottom:20px;">⚠️ Error al cargar</div><div style="color:#93547A;font-size:14px;margin-bottom:20px;">Por favor recarga la página</div><button onclick="location.reload()" style="background:#93547A;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Recargar</button></div></div></div>';
+  });
 }, 100);
+}
+
 </script>
 </body>
 </html>
