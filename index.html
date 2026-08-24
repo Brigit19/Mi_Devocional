@@ -497,7 +497,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-COMPLETE-FINAL";
+const APP_VERSION = "2026-08-24-FINAL-FIXED";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -695,11 +695,8 @@ async function renderGirlHistory(){
 
 function switchDay(daysOffset) {
   const today = todayStr();
-  const selectedDate = sessionStorage.getItem('selectedDate') || today;
   const selectedDate = addDaysToStr(today, daysOffset);
   sessionStorage.setItem('selectedDate', selectedDate);
-  
-  // Recargar renderGirlHome con la nueva fecha
   render('girlHome');
 }
 
