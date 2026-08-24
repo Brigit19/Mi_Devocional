@@ -966,7 +966,7 @@ async function renderGirlHome(){
         const files = Array.from(e.target.files).slice(0,5);
         if(!files.length) return;
         
-        sealBtn.querySelector('.cap').textContent = 'Devocional subido ✅';
+        sealBtn.querySelector('.cap').textContent = 'Guardando...';
         const fotos = [];
         
         for(const f of files){
@@ -989,6 +989,7 @@ async function renderGirlHome(){
         // Actualizar racha
         await recordStreak(user.id, dateStr);
         
+        sealBtn.querySelector('.cap').textContent = 'Devocional subido ✅';
         toast(`✅ Evidencia guardada para ${fmtDateShort(dateStr)}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
         loadDay(dateStr);
       };
