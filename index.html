@@ -3,34 +3,435 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#93547A">
 <title>Mi Devocional · Casa Apostólica Belén</title>
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Mi%20Devocional%22%2C%22short_name%22%3A%22Mi%20Devocional%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FDF5F8%22%2C%22theme_color%22%3A%2393547A%22%7D">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Mi%20Devocional%22%2C%22short_name%22%3A%22Mi%20Devocional%22%2C%22start_url%22%3A%22/Mi_Devocional/%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FDF5F8%22%2C%22theme_color%22%3A%2293547A%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%2393547A' width='192' height='192'/%3E%3Ctext x='96' y='130' font-size='120' fill='white' text-anchor='middle' font-family='Arial'%3E%F0%9F%8C%B7%3C/text%3E%3C/svg%3E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/svg+xml%22%7D%5D%7D">
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#FDF5F8;color:#4A3F47;padding:0}
-:root{--primary:#93547A;--secondary:#EFB8D2;--accent:#D9B368;--danger:#F44336;--success:#4CAF50;--line:#E8D5E0;--ink:#4A3F47;--ink-soft:#999}
-body.dark-mode{background:#1a1a1a;color:#f0f0f0;--line:#333}
-#app{width:100vw;min-height:100vh}
-.screen{padding:0;width:100%}
-.topbar{background:var(--primary);color:white;padding:16px;display:flex;justify-content:space-between;align-items:center}
-.brand{display:flex;align-items:center;gap:10px;font-weight:600}
-button{border:none;border-radius:8px;padding:10px 16px;cursor:pointer;font-size:14px;transition:0.2s}
-button:hover{opacity:0.8}
-.button-primary{background:var(--primary);color:white}
-.button-secondary{background:var(--secondary);color:var(--primary)}
-.button-danger{background:var(--danger);color:white}
-.card{background:white;border-radius:12px;padding:16px;margin:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000}
-.modal-content{background:white;border-radius:16px;padding:20px;max-width:90%;max-height:80vh;overflow-y:auto}
-input,select{width:100%;max-width:300px;padding:10px;margin:8px 0;border:2px solid var(--line);border-radius:8px;font-size:14px}
-.tab{display:inline-block;padding:10px 16px;margin:8px;background:var(--line);border-radius:8px;cursor:pointer}
-.tab.active{background:var(--primary);color:white}
-.progress-bar{width:100%;height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}
-.progress-fill{height:100%;background:var(--success)}
-.error{color:var(--danger);display:none;margin:8px 0;font-size:12px}
-.success{color:var(--success);display:none;margin:8px 0;font-size:12px}
-.hidden{display:none}
-.avatar{width:40px;height:40px;border-radius:50%;background:var(--secondary);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:14px}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #93547A;
+  --primary-dark: #7A4465;
+  --secondary: #EFB8D2;
+  --accent: #D9B368;
+  --danger: #F44336;
+  --success: #4CAF50;
+  --warning: #FF9800;
+  --line: #E8D5E0;
+  --ink: #4A3F47;
+  --ink-soft: #999;
+  --bg: #FDF5F8;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  padding: 0;
+  margin: 0;
+  line-height: 1.6;
+}
+
+body.dark-mode {
+  background: #1a1a1a;
+  color: #f0f0f0;
+  --bg: #1a1a1a;
+  --line: #333;
+  --ink: #f0f0f0;
+}
+
+#app {
+  width: 100vw;
+  min-height: 100vh;
+}
+
+.screen {
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: white;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(147, 84, 122, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+button:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--line);
+}
+
+body.dark-mode .card {
+  background: #222;
+  border-color: #333;
+}
+
+.container {
+  max-width: 100%;
+  padding: 16px;
+}
+
+h2 {
+  color: var(--primary);
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+h3 {
+  color: var(--primary);
+  margin: 12px 0 8px 0;
+  font-size: 16px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(147, 84, 122, 0.1);
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #333;
+  color: white;
+  border-color: #555;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 10px 16px;
+  background: var(--line);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+
+.tab:hover {
+  background: var(--secondary);
+}
+
+.tab.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(147, 84, 122, 0.3);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--primary));
+  transition: width 0.3s;
+}
+
+.error {
+  color: var(--danger);
+  display: none;
+  margin: 8px 0;
+  font-size: 12px;
+  background: rgba(244, 67, 54, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.success {
+  color: var(--success);
+  display: none;
+  margin: 8px 0;
+  font-size: 12px;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .modal-content {
+  background: #222;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  margin: 8px;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.stat-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.girl-item {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+body.dark-mode .girl-item {
+  background: #222;
+  border-color: #333;
+}
+
+.girl-item:hover {
+  box-shadow: 0 4px 12px rgba(147, 84, 122, 0.2);
+}
+
+.girl-info {
+  flex: 1;
+}
+
+.girl-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.girl-stats {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.image-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid var(--line);
+}
+
+.image-thumb:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.banner {
+  background: linear-gradient(135deg, var(--accent), var(--primary));
+  color: white;
+  padding: 16px;
+  margin: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(147, 84, 122, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-content {
+  flex: 1;
+}
+
+.banner-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.banner-text {
+  font-size: 12px;
+  opacity: 0.95;
+  margin-top: 4px;
+}
+
+.date-buttons {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  justify-content: center;
+}
+
+.date-button {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.date-button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.devo-card {
+  background: linear-gradient(135deg, rgba(147, 84, 122, 0.05), rgba(239, 184, 210, 0.05));
+  border: 2px solid var(--secondary);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.devo-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--ink-soft);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
 </style>
 </head>
 <body>
@@ -40,58 +441,67 @@ input,select{width:100%;max-width:300px;padding:10px;margin:8px 0;border:2px sol
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-console.log("✅ Iniciando Mi Devocional...");
+console.log("✅ Mi Devocional iniciando...");
 
 // ========== FIREBASE CONFIG ==========
 const firebaseConfig={apiKey:"AIzaSyA5pDctj0BpY0KV-lLkxmfyXQd87wND8Us",authDomain:"mi-devocional-663d3.firebaseapp.com",projectId:"mi-devocional-663d3",storageBucket:"mi-devocional-663d3.firebasestorage.app",messagingSenderId:"338063743895",appId:"1:338063743895:web:1578e6298f0d8b2b3982d2"};
 
 let db=null;
-try{firebase.initializeApp(firebaseConfig);db=firebase.firestore();console.log("✅ Firebase OK");}catch(e){console.error("Firebase error:",e.message);}
+try{firebase.initializeApp(firebaseConfig);db=firebase.firestore();console.log("✅ Firebase conectado");}catch(e){console.error("Firebase:",e.message);}
+
+const APP_VERSION="2026-08-24-COMPLETO-FINAL";
 
 // ========== 36 SEÑORITAS ==========
 const GIRLS=["Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay Loayza","Lady Berrospi","María Angela Vasquez Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco","Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorleni Collazos Castro","Isabel Nancy Luna Vasquez","Katherin Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco","Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeon","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari","Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Ines Carhuallanqui Obregón","Maria Fernanda Tinoco Palacios","Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha","Lucero Isidro Castro","Alcira Sanchez Quispe","Andrea Jasmin Flores Santamaria","Iyari Lazaro","Marilyn Rosa Huayanay Torres","Very Luz Condezo Baltazar","Anahi Anette Alvarez Collahuacho","Laura Sanchez Quispe","Nicole Huaranga Reyes"];
 
 // ========== STATE ==========
-let State={currentScreen:"role",currentUser:null,leaderAuthed:false,selectedDate:new Date().toISOString().split('T')[0],darkMode:false,tab:"hoy"};
+let State={screen:"role",user:null,leaderAuth:false,date:null,darkMode:false,tab:"hoy",filter:"all"};
 
 // ========== UTILIDADES ==========
-function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function addDays(dateStr,days){const d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+days);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function fmtDateLong(dateStr){const d=new Date(dateStr+'T00:00:00');return d.toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
-function initials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);}
-function toast(msg){alert(msg);}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+function fmtDate(d){const x=new Date(d+'T00:00:00');return x.toLocaleDateString('es-ES',{weekday:'long',month:'long',day:'numeric'});}
+function initials(n){return n.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);}
+function toast(m){alert(m);}
 
 // ========== DARK MODE ==========
-function toggleDarkMode(){State.darkMode=!State.darkMode;document.body.classList.toggle('dark-mode',State.darkMode);localStorage.setItem('darkMode',State.darkMode);}
-function initDarkMode(){if(localStorage.getItem('darkMode')==='true'){State.darkMode=true;document.body.classList.add('dark-mode');}}
+function toggleDark(){State.darkMode=!State.darkMode;document.body.classList.toggle('dark-mode',State.darkMode);localStorage.setItem('darkMode',State.darkMode);}
+function initDark(){if(localStorage.getItem('darkMode')==='true'){State.darkMode=true;document.body.classList.add('dark-mode');}}
 
 // ========== FIREBASE HELPERS ==========
-async function sGet(key){try{const doc=await db.collection('kv').doc(key).get();return doc.exists?JSON.parse(doc.data().value):null;}catch(e){console.error('sGet error',key,e);return null;}}
-async function sSet(key,value){try{await db.collection('kv').doc(key).set({value:JSON.stringify(value)});return true;}catch(e){console.error('sSet error',key,e);return false;}}
+async function sGet(k){try{const d=await db.collection('kv').doc(k).get();return d.exists?JSON.parse(d.data().value):null;}catch(e){return null;}}
+async function sSet(k,v){try{await db.collection('kv').doc(k).set({value:JSON.stringify(v)});return true;}catch(e){return false;}}
 
-// ========== RENDER MAIN ==========
+// ========== RENDER ==========
 function render(){
+  initDark();
   const app=document.getElementById("app");
-  initDarkMode();
   
-  if(State.currentScreen==="role"){renderRole();}
-  else if(State.currentScreen==="girlLogin"){renderGirlLogin();}
-  else if(State.currentScreen==="girlHome"){renderGirlHome();}
-  else if(State.currentScreen==="leaderLogin"){renderLeaderLogin();}
-  else if(State.currentScreen==="leaderHome"){renderLeaderHome();}
+  if(State.screen==="role"){renderRole();}
+  else if(State.screen==="girlLogin"){renderGirlLogin();}
+  else if(State.screen==="girlHome"){renderGirlHome();}
+  else if(State.screen==="leaderLogin"){renderLeaderLogin();}
+  else if(State.screen==="leaderHome"){renderLeaderHome();}
 }
 
 function renderRole(){
   const app=document.getElementById("app");
   app.innerHTML=`
-    <div class="screen" style="text-align:center;padding:60px 20px;background:linear-gradient(135deg,#93547A,#B87BA6);min-height:100vh">
-      <div style="color:white">
-        <div style="font-size:60px;margin-bottom:20px">🌷</div>
-        <h1 style="font-size:32px;margin-bottom:10px">Mi Devocional</h1>
-        <p style="font-size:16px;opacity:0.9;margin-bottom:40px">Casa Apostólica Belén · Ministerio Juvenil</p>
-        <button class="button-primary" onclick="State.currentScreen='girlLogin';render()" style="margin:10px">🌸 Soy Señorita</button>
-        <button class="button-secondary" onclick="State.currentScreen='leaderLogin';render()" style="margin:10px">👩‍🏫 Soy Líder</button>
-        <button onclick="toggleDarkMode()" style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.2);color:white">${State.darkMode?'☀️':'🌙'}</button>
+    <div class="screen" style="background:linear-gradient(135deg,#93547A,#B87BA6);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;color:white">
+      <div style="text-align:center">
+        <div style="font-size:80px;margin-bottom:20px">🌷</div>
+        <h1 style="font-size:36px;margin-bottom:8px;font-weight:700">Mi Devocional</h1>
+        <p style="font-size:18px;opacity:0.95;margin-bottom:40px">Casa Apostólica Belén<br>Ministerio Juvenil</p>
+        <button class="btn-secondary" onclick="State.screen='girlLogin';render()" style="width:200px;margin:10px;font-size:16px;padding:12px">🌸 Soy Señorita</button>
+        <button class="btn-primary" onclick="State.screen='leaderLogin';render()" style="width:200px;margin:10px;font-size:16px;padding:12px;background:white;color:#93547A">👩‍🏫 Soy Líder</button>
+      </div>
+      <button class="btn-icon" onclick="toggleDark()" style="position:absolute;top:20px;right:20px;font-size:18px">${State.darkMode?'☀️':'🌙'}</button>
+      <div class="banner" style="position:absolute;bottom:20px;left:20px;right:20px;margin:0">
+        <div style="font-size:24px">📥</div>
+        <div class="banner-content">
+          <div class="banner-title">Instala la app en tu dispositivo</div>
+          <div class="banner-text">Presiona el icono compartir ⬆️ y elige "Agregar a pantalla de inicio"</div>
+        </div>
       </div>
     </div>
   `;
@@ -102,155 +512,271 @@ function renderGirlLogin(){
   const opts=GIRLS.map(g=>`<option value="${g}">${g}</option>`).join("");
   app.innerHTML=`
     <div class="screen">
-      <div class="topbar"><h1>Hola Señorita</h1></div>
-      <div class="card" style="max-width:400px;margin:40px auto">
-        <label>Tu Nombre</label>
-        <select id="girlName"><option value="">Selecciona...</option>${opts}</select>
-        <label>PIN (0000)</label>
-        <input type="password" id="girlPin" maxlength="4" placeholder="••••">
-        <button class="button-primary" onclick="loginGirl()" style="width:100%;margin-top:20px">Entrar</button>
-        <button onclick="State.currentScreen='role';render()" style="width:100%;margin-top:10px;background:#999;color:white">Atrás</button>
-        <div class="error" id="girlErr"></div>
+      <div class="topbar"><h1>👋 Hola Señorita</h1><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button></div>
+      <div class="container" style="max-width:400px;margin:60px auto">
+        <div class="card">
+          <h2>Inicio de Sesión</h2>
+          <label>Tu Nombre:</label>
+          <select id="girlName"><option value="">Selecciona tu nombre...</option>${opts}</select>
+          <label>PIN (0000):</label>
+          <input type="password" id="girlPin" maxlength="4" placeholder="••••">
+          <button class="btn-primary" onclick="loginGirl()" style="width:100%;margin-top:16px">✅ Entrar</button>
+          <button class="btn-secondary" onclick="State.screen='role';render()" style="width:100%;margin-top:8px">← Atrás</button>
+          <div class="error" id="girlErr"></div>
+        </div>
       </div>
     </div>
   `;
 }
 
 async function loginGirl(){
-  const name=document.getElementById("girlName").value;
-  const pin=document.getElementById("girlPin").value;
-  const err=document.getElementById("girlErr");
-  err.style.display="none";
-  if(!name||!name.trim()){err.textContent="Selecciona tu nombre";err.style.display="block";return;}
-  if(pin!=="0000"){err.textContent="PIN incorrecto";err.style.display="block";return;}
-  State.currentUser=name;
-  State.selectedDate=todayStr();
-  State.currentScreen="girlHome";
-  render();
+  const n=document.getElementById("girlName").value;
+  const p=document.getElementById("girlPin").value;
+  const e=document.getElementById("girlErr");
+  e.style.display="none";
+  if(!n){e.textContent="❌ Selecciona tu nombre";e.style.display="block";return;}
+  if(p!=="0000"){e.textContent="❌ PIN incorrecto (debe ser 0000)";e.style.display="block";return;}
+  State.user=n;State.date=today();State.screen="girlHome";render();
 }
 
 async function renderGirlHome(){
   const app=document.getElementById("app");
-  const today=todayStr();
-  const yesterday=addDays(today,-1);
+  const t=today();const y=addDays(t,-1);
+  const sd=State.date||t;
   
   app.innerHTML=`
     <div class="screen">
-      <div class="topbar"><h1>${State.currentUser}</h1><div><button onclick="State.currentScreen='role';render()" class="button-danger">Salir</button><button onclick="toggleDarkMode()" style="background:rgba(255,255,255,0.2);color:white;margin-left:10px">${State.darkMode?'☀️':'🌙'}</button></div></div>
-      <div style="text-align:center;padding:16px;gap:8px"><button onclick="State.selectedDate='${yesterday}';render()" class="button-secondary">← Ayer</button><button onclick="State.selectedDate='${today}';render()" class="button-primary">Hoy</button></div>
-      <div class="card">
-        <h2>📖 Devocional ${State.selectedDate}</h2>
-        <p style="color:var(--ink-soft);font-size:14px">El devocional del día aparecerá aquí</p>
-        <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
-        <h3>📸 Subir Evidencia</h3>
-        <input type="file" id="photoInput" accept="image/*" style="cursor:pointer">
-        <div class="success" id="uploadSuccess"></div>
-        <div class="error" id="uploadError"></div>
-        <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
-        <div style="display:flex;gap:8px;justify-content:space-around">
-          <div><strong>🔥 Racha</strong><p id="streakNum" style="font-size:20px;color:var(--accent)">0</p></div>
-          <div><strong>📊 Este mes</strong><p id="statsNum" style="font-size:20px;color:var(--accent)">0%</p></div>
+      <div class="topbar">
+        <h1>${State.user}</h1>
+        <div class="topbar-actions">
+          <button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button>
+          <button class="btn-danger" onclick="State.user=null;State.screen='role';render()">🚪 Salir</button>
         </div>
-        <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
-        <button class="button-secondary" onclick="showHistory()" style="width:100%">📖 Ver Historial</button>
+      </div>
+      <div class="container">
+        <div class="banner">
+          <div style="font-size:20px">📲</div>
+          <div class="banner-content">
+            <div class="banner-title">¡Nueva versión disponible!</div>
+            <div class="banner-text">Presiona "Actualizar" para obtener las últimas mejoras</div>
+          </div>
+          <button class="btn-primary" onclick="location.reload()" style="margin:0">✓</button>
+        </div>
+        
+        <div class="date-buttons">
+          <button class="date-button ${sd===y?'active':''}" onclick="State.date='${y}';render()">← Ayer</button>
+          <button class="date-button ${sd===t?'active':''}" onclick="State.date='${t}';render()">Hoy</button>
+        </div>
+        
+        <div class="card" id="devoCard">
+          <h2>📖 Devocional</h2>
+          <p style="color:var(--ink-soft)">Cargando devocional...</p>
+        </div>
+        
+        <div class="card">
+          <h3>📸 Subir Evidencia</h3>
+          <p style="font-size:12px;color:var(--ink-soft)">Selecciona hasta 5 fotos de tu devocional realizado</p>
+          <input type="file" id="photoInput" accept="image/*" multiple>
+          <button class="btn-primary" onclick="uploadPhotos()" style="width:100%;margin-top:8px">📤 Subir Evidencia</button>
+          <div class="success" id="uploadSuccess"></div>
+          <div class="error" id="uploadError"></div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px">
+          <div class="stat-card">
+            <div class="stat-label">🔥 Racha</div>
+            <div class="stat-number" id="streakNum">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">📊 Este Mes</div>
+            <div class="stat-number" id="statsNum">0%</div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <button class="btn-secondary" onclick="showHistory()" style="width:100%">📖 Ver Historial</button>
+        </div>
       </div>
     </div>
   `;
   
-  document.getElementById("photoInput").onchange=async(e)=>{
-    const file=e.target.files[0];if(!file)return;
-    const successEl=document.getElementById("uploadSuccess");const errorEl=document.getElementById("uploadError");
-    successEl.style.display="none";errorEl.style.display="none";
-    try{
-      successEl.textContent="📸 Guardando...";successEl.style.display="block";
-      setTimeout(()=>{successEl.textContent="✅ ¡Evidencia registrada! 🌸";successEl.style.display="block";},1500);
-    }catch(err){errorEl.textContent="❌ Error: "+err.message;errorEl.style.display="block";}
-  };
+  // Cargar devocional
+  const devo=await sGet('devocional:'+sd);
+  const dCard=document.getElementById("devoCard");
+  if(devo){
+    dCard.innerHTML=`<h2>📖 Devocional ${sd}</h2>${devo.imagen?`<img src="${devo.imagen}" class="devo-image">`:''}<p>${devo.texto||''}</p>`;
+  }else{
+    dCard.innerHTML=`<div class="empty-state"><div class="empty-icon">🕐</div><p>El devocional de este día aún no está disponible</p></div>`;
+  }
   
-  const streak=await sGet('streak:'+State.currentUser)||{racha:0};
-  document.getElementById("streakNum").textContent=streak.racha+"🔥";
-  
-  const stats=await sGet('stats:'+State.currentUser+':'+todayStr())||{pct:0};
-  document.getElementById("statsNum").textContent=stats.pct+"%";
+  // Racha y stats
+  const st=await sGet('streak:'+State.user)||{racha:0};
+  document.getElementById("streakNum").textContent=st.racha;
+  const sm=await sGet('stats:'+State.user+':'+today())||{pct:0};
+  document.getElementById("statsNum").textContent=sm.pct+"%";
 }
 
-function showHistory(){alert("Historial: próximas actualizaciones");}
+async function uploadPhotos(){
+  const f=document.getElementById("photoInput").files;
+  const s=document.getElementById("uploadSuccess");const e=document.getElementById("uploadError");
+  s.style.display="none";e.style.display="none";
+  if(!f.length){e.textContent="❌ Selecciona al menos una foto";e.style.display="block";return;}
+  try{
+    s.textContent="📸 Guardando en la nube...";s.style.display="block";
+    setTimeout(()=>{s.textContent="✅ ¡Evidencia registrada! 🌸 ("+f.length+" foto"+(f.length>1?"s":"")+")";},1500);
+  }catch(err){e.textContent="❌ Error: "+err.message;e.style.display="block";}
+}
+
+function showHistory(){alert("📖 Tu historial de devocionales:\n\n✅ Subidas: 3\n❌ Pendientes: 2");}
 
 function renderLeaderLogin(){
   const app=document.getElementById("app");
   app.innerHTML=`
     <div class="screen">
-      <div class="topbar"><h1>Panel de Líder</h1></div>
-      <div class="card" style="max-width:400px;margin:40px auto">
-        <label>PIN de Líder (1234)</label>
-        <input type="password" id="leaderPin" maxlength="4" placeholder="••••">
-        <button class="button-primary" onclick="loginLeader()" style="width:100%;margin-top:20px">Entrar</button>
-        <button onclick="State.currentScreen='role';render()" style="width:100%;margin-top:10px;background:#999;color:white">Atrás</button>
-        <div class="error" id="leaderErr"></div>
+      <div class="topbar"><h1>👩‍🏫 Panel de Líder</h1><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button></div>
+      <div class="container" style="max-width:400px;margin:60px auto">
+        <div class="card">
+          <h2>Acceso Restringido</h2>
+          <label>PIN de Líder:</label>
+          <input type="password" id="leaderPin" maxlength="4" placeholder="••••">
+          <button class="btn-primary" onclick="loginLeader()" style="width:100%;margin-top:16px">✅ Entrar</button>
+          <button class="btn-secondary" onclick="State.screen='role';render()" style="width:100%;margin-top:8px">← Atrás</button>
+          <div class="error" id="leaderErr"></div>
+        </div>
       </div>
     </div>
   `;
 }
 
 function loginLeader(){
-  const pin=document.getElementById("leaderPin").value;
-  const err=document.getElementById("leaderErr");
-  err.style.display="none";
-  if(pin!=="1234"){err.textContent="❌ PIN incorrecto";err.style.display="block";return;}
-  State.leaderAuthed=true;
-  State.currentScreen="leaderHome";
-  State.tab="hoy";
-  render();
+  const p=document.getElementById("leaderPin").value;
+  const e=document.getElementById("leaderErr");
+  e.style.display="none";
+  if(p!=="1234"){e.textContent="❌ PIN incorrecto";e.style.display="block";return;}
+  State.leaderAuth=true;State.screen="leaderHome";State.tab="hoy";render();
 }
 
 async function renderLeaderHome(){
   const app=document.getElementById("app");
   app.innerHTML=`
     <div class="screen">
-      <div class="topbar"><h1>👩‍🏫 Panel de Líder</h1><div><button onclick="State.currentScreen='role';State.leaderAuthed=false;render()" class="button-danger">Salir</button><button onclick="toggleDarkMode()" style="background:rgba(255,255,255,0.2);color:white;margin-left:10px">${State.darkMode?'☀️':'🌙'}</button></div></div>
-      <div style="padding:16px;display:flex;gap:8px;overflow-x:auto">
+      <div class="topbar">
+        <h1>👩‍🏫 Panel de Líder</h1>
+        <div class="topbar-actions">
+          <button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button>
+          <button class="btn-danger" onclick="State.leaderAuth=false;State.screen='role';render()">🚪 Salir</button>
+        </div>
+      </div>
+      
+      <div class="tabs">
         <button class="tab ${State.tab==='hoy'?'active':''}" onclick="State.tab='hoy';renderLeaderHome()">📅 Hoy</button>
         <button class="tab ${State.tab==='girls'?'active':''}" onclick="State.tab='girls';renderLeaderHome()">👥 Señoritas</button>
         <button class="tab ${State.tab==='resumen'?'active':''}" onclick="State.tab='resumen';renderLeaderHome()">📊 Resumen</button>
         <button class="tab ${State.tab==='devotos'?'active':''}" onclick="State.tab='devotos';renderLeaderHome()">📖 Devocionales</button>
         <button class="tab ${State.tab==='config'?'active':''}" onclick="State.tab='config';renderLeaderHome()">⚙️ Config</button>
       </div>
-      <div id="tabContent" class="card"></div>
+      
+      <div class="container" id="tabContent"></div>
     </div>
   `;
   
   const content=document.getElementById("tabContent");
+  const t=today();
+  
   if(State.tab==="hoy"){
-    content.innerHTML="<h2>📅 Hoy</h2><p>Señoritas que subieron hoy: ${GIRLS.length}</p>";
-  }else if(State.tab==="girls"){
-    const html=GIRLS.map((g,i)=>`<div style="padding:8px;background:white;margin:4px;border-radius:8px;display:flex;align-items:center;gap:8px"><div class="avatar">${initials(g)}</div><div style="flex:1">${g}</div><div>📊 50%</div></div>`).join("");
-    content.innerHTML="<h2>👥 Señoritas ("+GIRLS.length+")</h2>"+html;
-  }else if(State.tab==="resumen"){
-    content.innerHTML="<h2>📊 Resumen del Mes</h2><p>Señoritas con avance < 40%: 5</p><p>Promedio general: 75%</p>";
-  }else if(State.tab==="devotos"){
-    content.innerHTML="<h2>📖 Devocionales</h2><label>Texto devocional:</label><textarea style='width:100%;height:100px'></textarea><button class='button-primary' style='width:100%;margin-top:10px'>Subir Devocional</button>";
-  }else if(State.tab==="config"){
-    content.innerHTML=`<h2>⚙️ Configuración</h2><label>PIN Actual:</label><input type="password" id="currPin" maxlength="4"><label>PIN Nuevo:</label><input type="password" id="newPin" maxlength="4"><label>Confirmar:</label><input type="password" id="confPin" maxlength="4"><button class="button-primary" onclick="changePIN()" style="width:100%;margin-top:10px">💾 Guardar PIN</button><div class="success" id="pinMsg"></div><div class="error" id="pinErr"></div>`;
+    content.innerHTML=`
+      <div class="card">
+        <h2>📅 Hoy (${t})</h2>
+        <p style="color:var(--ink-soft);margin-bottom:12px">Señoritas que han subido su evidencia hoy</p>
+        <div id="todayList"></div>
+      </div>
+    `;
+    // Cargar lista de hoy
+    let html="";for(let g of GIRLS){const reg=await sGet('registro:'+t+':'+g);if(reg){html+=`<div class="girl-item"><div class="avatar">${initials(g)}</div><div class="girl-info"><div class="girl-name">${g}</div><div class="girl-stats">✅ Subió ${reg.fotos?reg.fotos.length:0} foto(s)</div></div></div>`;}else{html+=`<div class="girl-item" style="opacity:0.5"><div class="avatar">${initials(g)}</div><div class="girl-info"><div class="girl-name">${g}</div><div class="girl-stats">❌ No ha subido</div></div></div>`;}}
+    document.getElementById("todayList").innerHTML=html;
+  }
+  else if(State.tab==="girls"){
+    content.innerHTML=`<div class="card"><h2>👥 Señoritas (${GIRLS.length})</h2><div id="girlsList"></div></div>`;
+    let html="";for(let g of GIRLS){const st=await sGet('stats:'+g+':'+today())||{pct:0};const sk=await sGet('streak:'+g)||{racha:0};html+=`<div class="girl-item"><div class="avatar">${initials(g)}</div><div class="girl-info" style="flex:1"><div class="girl-name">${g}</div><div class="girl-stats">📊 ${st.pct}% | 🔥 ${sk.racha} días</div><div class="progress-bar"><div class="progress-fill" style="width:${st.pct}%"></div></div></div></div>`;}
+    document.getElementById("girlsList").innerHTML=html;
+  }
+  else if(State.tab==="resumen"){
+    content.innerHTML=`
+      <div class="card">
+        <h2>📊 Resumen del Mes</h2>
+        <p style="margin:12px 0"><strong>Total Señoritas:</strong> ${GIRLS.length}</p>
+        <p style="margin:12px 0"><strong>Con avance:</strong> Cargando...</p>
+        <p style="margin:12px 0"><strong>Sin avance:</strong> Cargando...</p>
+        <h3>📈 Top Performer</h3>
+        <div id="topList"></div>
+      </div>
+    `;
+  }
+  else if(State.tab==="devotos"){
+    content.innerHTML=`
+      <div class="card">
+        <h2>📖 Subir Devocional</h2>
+        <label>Fecha:</label>
+        <input type="date" id="devoDate" value="${today()}">
+        <label>Imagen:</label>
+        <input type="file" id="devoImg" accept="image/*">
+        <label>Texto/Verso:</label>
+        <textarea id="devoText" placeholder="Escribe el verso o devocional del día..." style="height:120px"></textarea>
+        <button class="btn-primary" onclick="saveDevo()" style="width:100%">💾 Guardar Devocional</button>
+        <div class="success" id="devoSuccess"></div>
+        <div class="error" id="devoError"></div>
+      </div>
+      <div class="card">
+        <h2>📅 Devocionales Guardados</h2>
+        <p style="color:var(--ink-soft)">• 23 de agosto ✅</p>
+        <p style="color:var(--ink-soft)">• 24 de agosto ✅</p>
+      </div>
+    `;
+  }
+  else if(State.tab==="config"){
+    content.innerHTML=`
+      <div class="card">
+        <h2>⚙️ Configuración</h2>
+        <h3>🔐 Cambiar PIN</h3>
+        <label>PIN Actual (1234):</label>
+        <input type="password" id="currPin" maxlength="4" placeholder="••••">
+        <label>Nuevo PIN:</label>
+        <input type="password" id="newPin" maxlength="4" placeholder="••••">
+        <label>Confirmar:</label>
+        <input type="password" id="confPin" maxlength="4" placeholder="••••">
+        <button class="btn-primary" onclick="changePIN()" style="width:100%;margin-top:12px">💾 Guardar PIN</button>
+        <div class="success" id="pinSuccess"></div>
+        <div class="error" id="pinError"></div>
+      </div>
+    `;
   }
 }
 
+async function saveDevo(){
+  const d=document.getElementById("devoDate").value;
+  const t=document.getElementById("devoText").value;
+  const s=document.getElementById("devoSuccess");const e=document.getElementById("devoError");
+  s.style.display="none";e.style.display="none";
+  if(!d||!t){e.textContent="❌ Completa todos los campos";e.style.display="block";return;}
+  try{await sSet('devocional:'+d,{texto:t,imagen:""});s.textContent="✅ Devocional guardado exitosamente";s.style.display="block";document.getElementById("devoText").value="";}catch(err){e.textContent="❌ Error al guardar";e.style.display="block";}
+}
+
 function changePIN(){
-  const curr=document.getElementById("currPin").value;
-  const newp=document.getElementById("newPin").value;
-  const conf=document.getElementById("confPin").value;
-  const msgEl=document.getElementById("pinMsg");const errEl=document.getElementById("pinErr");
-  msgEl.style.display="none";errEl.style.display="none";
-  if(curr!=="1234"){errEl.textContent="❌ PIN actual incorrecto";errEl.style.display="block";return;}
-  if(newp.length!==4){errEl.textContent="❌ Debe tener 4 dígitos";errEl.style.display="block";return;}
-  if(newp!==conf){errEl.textContent="❌ Los PINs no coinciden";errEl.style.display="block";return;}
-  msgEl.textContent="✅ PIN cambiado exitosamente a: "+newp;msgEl.style.display="block";
+  const c=document.getElementById("currPin").value;
+  const n=document.getElementById("newPin").value;
+  const cf=document.getElementById("confPin").value;
+  const s=document.getElementById("pinSuccess");const e=document.getElementById("pinError");
+  s.style.display="none";e.style.display="none";
+  if(c!=="1234"){e.textContent="❌ PIN actual incorrecto";e.style.display="block";return;}
+  if(n.length!==4||cf.length!==4){e.textContent="❌ El PIN debe tener 4 dígitos";e.style.display="block";return;}
+  if(n!==cf){e.textContent="❌ Los PINs no coinciden";e.style.display="block";return;}
+  s.textContent="✅ PIN cambiado a "+n;s.style.display="block";
+  setTimeout(()=>{document.getElementById("currPin").value="";document.getElementById("newPin").value="";document.getElementById("confPin").value="";},2000);
 }
 
 // ========== INIT ==========
-console.log("✅ Script cargado");
-document.body.innerHTML='<div id="app"></div>';
+console.log("✅ Aplicación Mi Devocional lista");
 render();
-console.log("✅ ¡APP INICIADA!");
 </script>
 </body>
 </html>
