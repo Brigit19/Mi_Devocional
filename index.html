@@ -819,36 +819,15 @@ async function renderGirlHome(){
   if(sealBtn){
     sealBtn.onclick = ()=> $('#fileInput').click();
     $('#fileInput').onchange = async (e)=>{
-      const files = Array.from(e.target.files).slice(0,5);
-      if(!files.length) return;
-      try {
-        const btnCap = sealBtn.querySelector('.cap');
-        btnCap.textContent = '📸 Guardando...';
-        sealBtn.disabled = true;
-        const fotos = [];
-        for(const f of files){
-          const comp = await compressImage(f, 700, 0.6);
-          fotos.push(comp);
-        }
-        if(!fotos.length){
-          toast('❌ Error procesando imágenes');
-          sealBtn.disabled = false;
-          btnCap.textContent = registroHoy ? '✏️ Editar' : '📷 Subir';
-          return;
-        }
-        btnCap.textContent = '💾 Guardando en la nube...';
-        const reg = { estado:'M', fotos, hora: new Date().toISOString() };
-        await sSet(regKey, reg);
-        btnCap.textContent = '📊 Actualizando...';
-        await computeAndSaveStats(user.id, today);
-        toast(`✅ ¡Devocional subido! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
-        setTimeout(()=>renderGirlHome(), 1500);
-      } catch(err) {
-        console.error('Upload error:', err);
-        toast('❌ Error. Intenta de nuevo.');
-        sealBtn.disabled = false;
-        sealBtn.querySelector('.cap').textContent = registroHoy ? '✏️ Editar' : '📷 Subir';
-      }
+      const files = Array.from(e.target.files).slice(0,5); if(!files.length) return;
+      sealBtn.querySelector('.cap').textContent = 'Guardando...';
+      const fotos = [];
+      for(const f of files){ fotos.push(await compressImage(f, 700, 0.6)); }
+      const registro = { estado:'M', fotos, hora: new Date().toISOString() };
+      await sSet(regKey, registro);
+      const newStats = await computeAndSaveStats(user.id, today);
+      toast(`¡Evidencia ${registroHoy ? 'actualizada' : 'registrada'}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
+      renderGirlHome();
     };
   }
 }
@@ -1416,12 +1395,14 @@ async function renderTabSenoritas(){
 }
 
 
-/* --- TAB: CONFIGURACIÓN --- */
+
 }
 }
 
+/* --- TAB: CONFIGURACIÓN --- */
 async function renderTabConfig(){
   const body = $('#tabBody');
+  if(!body) return;
   body.innerHTML = `
     <div class="section-title"><h2>⚙️ Configuración</h2></div>
     <div class="card" style="padding:20px;">
@@ -1434,24 +1415,24 @@ async function renderTabConfig(){
     </div>
   `;
   const btn = $('#cfgBtn');
-  if(btn) {
-    btn.onclick = async () => {
+  if(btn){
+    btn.onclick = async ()=>{
       const curr = $('#cpPin').value.trim();
       const newp = $('#npPin').value.trim();
       const cnfm = $('#cnPin').value.trim();
       const err = $('#cfgErr');
       err.style.display = 'none';
-      if(curr !== State.config.leaderPin) {
+      if(curr !== State.config.leaderPin){
         err.textContent = '❌ PIN incorrecto';
         err.style.display = 'block';
         return;
       }
-      if(newp.length !== 4) {
+      if(newp.length !== 4){
         err.textContent = '❌ Debe tener 4 dígitos';
         err.style.display = 'block';
         return;
       }
-      if(newp !== cnfm) {
+      if(newp !== cnfm){
         err.textContent = '❌ No coinciden';
         err.style.display = 'block';
         return;
@@ -1465,7 +1446,12 @@ async function renderTabConfig(){
   }
 }
 
-setTimeout(() => init(), 100);
+// INICIALIZACIÓN
+console.log('✅ Script cargado y listo');
+setTimeout(() => {
+  console.log('✅ Inicializando app...');
+  init().catch(err => console.error('❌ Error:', err));
+}, 100);
 </script>
 </body>
 </html>
