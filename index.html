@@ -366,60 +366,24 @@ async function sList(prefix){
 }
 
 /* ================= DEFAULT ROSTER ================= */
-const DEFAULT_NAMES = [
-"Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay Loayza",
-
-"Lady Berrospi","María Angela Vasquez Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco",
-
-"Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorleni Collazos Castro","Isabel Nancy Luna Vasquez",
-
-"Katherin Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco",
-
-"Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeon","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari",
-
-"Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Ines Carhuallanqui Obregón","Maria Fernanda Tinoco Palacios",
-
-"Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha","Lucero Isidro Castro",
-
-"Alcira Sanchez Quispe","Andrea Jasmin Flores Santamaria","Iyari Lazaro","Marilyn Rosa Huayanay Torres",
-
-"Very Luz Condezo Baltazar","Anahi Anette Alvarez Collahuacho","Laura Sanchez Quispe","Nicole Huaranga Reyes"
-];
+const DEFAULT_NAMES = ["Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay Loayza","Lady Berrospi","María Angela Vasquez Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco","Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorleni Collazos Castro","Isabel Nancy Luna Vasquez","Katherin Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco","Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeon","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari","Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Ines Carhuallanqui Obregón","Maria Fernanda Tinoco Palacios","Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha","Lucero Isidro Castro","Alcira Sanchez Quispe","Andrea Jasmin Flores Santamaria","Iyari Lazaro","Marilyn Rosa Huayanay Torres","Very Luz Condezo Baltazar","Anahi Anette Alvarez Collahuacho","Laura Sanchez Quispe","Nicole Huaranga Reyes"];
 
 function slugId(name, idx){
   return 'u' + idx + '_' + name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]+/g,'').slice(0,10);
 }
 
 async function ensureSeed(){
-  try {
-    let names = await Promise.race([
-      sGet('nombres'),
-      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
-    
-    if(!names || !Array.isArray(names) || names.length === 0){
-      names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
-      try{ await sSet('nombres', names); }catch(e){}
-    }
-    
-    let config = await Promise.race([
-      sGet('config'),
-      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
-    
-    if(!config){
-      config = { leaderPin: '1234' };
-      try{ await sSet('config', config); }catch(e){}
-    }
-    
-    return { names: names || DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true })), config: config || { leaderPin: '1234' } };
-  } catch(err) {
-    console.warn('⚠️ Firebase timeout/error, usando datos locales:', err.message);
-    return { 
-      names: DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true })), 
-      config: { leaderPin: '1234' } 
-    };
+  let names = await sGet('nombres');
+  if(!names){
+    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000' }));
+    await sSet('nombres', names);
   }
+  let config = await sGet('config');
+  if(!config){
+    config = { leaderPin: '1234' };
+    await sSet('config', config);
+  }
+  return { names, config };
 }
 
 /* ================= APP STATE ================= */
@@ -495,7 +459,7 @@ async function scheduleNotifications(){
 async function checkAndNotify(){
   if(!State.currentUser) return;
   const today = todayStr();
-  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
+  const regKey = 'registro:'+today+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
   
   if(!registroHoy){
@@ -512,33 +476,17 @@ async function checkAndNotify(){
 }
 
 async function init(){
-  try {
-    console.log('🚀 Inicializando app...');
-    const seed = await ensureSeed();
-    State.names = seed.names || [];
-    State.config = seed.config || { leaderPin: '1234' };
-    
-    if(!State.names || State.names.length === 0) {
-      State.names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
-    }
-    
-    console.log('✅ Datos cargados:', State.names.length, 'señoritas');
-    
-    render('role');
-    initDarkMode();
-    scheduleNotifications();
-    console.log('✅ App lista');
-  } catch(err) {
-    console.error('❌ Error en init():', err);
-    // Fallback: mostrar algo aunque sea
-    State.names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
-    State.config = { leaderPin: '1234' };
-    render('role');
-  }
+  const seed = await ensureSeed();
+  State.names = seed.names; State.config = seed.config;
+  render('role');
+  initDarkMode();
+  scheduleNotifications();
+  // checkForUpdate(); // DESACTIVADO ESTA SEMANA - Se activa el sábado 18
+  // setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-restored-fixed";
+const APP_VERSION = "2026-08-24-EMERGENCY-FIX-v1";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -637,12 +585,12 @@ function renderGirlLogin(){
     </div>
   </div>`;
   $('#back').onclick = ()=>render('role');
-  $('#enter').onclick = async ()=>{
+  $('#enter').onclick = ()=>{
     const id = $('#selName').value; const pin = $('#pin').value.trim();
     const user = State.names.find(n=>n.id===id);
     if(!user || pin !== user.pin){ $('#err').style.display='block'; return; }
     State.currentUser = user;
-    await render('girlHome');
+    render('girlHome');
   };
 }
 
@@ -667,6 +615,7 @@ async function renderGirlHistory(){
       </div>
       <button class="icon-btn" id="backBtn">← Volver</button>
     </div>
+    <main>
       <div class="card">
         <h2 style="color:var(--primary-dark);margin-top:0;">📊 Tu progreso</h2>
         
@@ -691,6 +640,7 @@ async function renderGirlHistory(){
           <div style="text-align:center;padding:20px;color:var(--ink-soft);">Cargando tus devocionales...</div>
         </div>
       </div>
+    </main>
   </div>`;
   
   // Load history
@@ -731,25 +681,16 @@ async function renderGirlHistory(){
   document.getElementById('backBtn').onclick = ()=> renderGirlHome();
 }
 
-
-// Función para recargar renderGirlHome cuando se selecciona un día
-function switchDay(newDay){
-  State.selectedDay = newDay;
-  renderGirlHome();
-}
-
 async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
   const today = todayStr();
-  // Usar el día seleccionado si existe
-  const selectedDate = State.selectedDay || today;
-  const devo = await sGet('devocional:'+selectedDate);
+  const devo = await sGet('devocional:'+today);
   const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
   const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
   const stats = { racha: streak.racha, totalM: monthStats.totalM };
-  const regKey = 'registro:'+selectedDate+':'+State.currentUser.id;
+  const regKey = 'registro:'+today+':'+State.currentUser.id;
   const registroHoy = await sGet(regKey);
-  const deadline = (await sGet('deadline:'+selectedDate)) || addDaysToStr(today, 1);
+  const deadline = (await sGet('deadline:'+today)) || addDaysToStr(today, 1);
   const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(today+'T00:00:00'))/86400000);
   let deadlineColor = 'var(--success)';
   let deadlineIcon = '✅';
@@ -769,15 +710,8 @@ async function renderGirlHome(){
         <button class="icon-btn" id="logout">Salir</button>
       </div>
     </div>
-      <div style="display:flex;gap:8px;margin:16px 0;justify-content:center;">
-        <button class="day-btn" id="btnAyer" onclick="switchDay(addDaysToStr(todayStr(), -1))" style="padding:8px 16px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;font-size:12px;">
-          Ayer
-        </button>
-        <button class="day-btn" id="btnHoy" onclick="switchDay(todayStr())" style="padding:8px 16px;border:2px solid var(--primary-dark);border-radius:8px;background:var(--gold-soft);cursor:pointer;font-weight:600;font-size:12px;color:var(--primary-dark);">
-          Hoy
-        </button>
-      </div>
-      <span class="date-chip">${fmtDateLong(selectedDate)}</span>
+    <main>
+      <span class="date-chip">${fmtDateLong(today)}</span>
       ${devo ? `
       <div class="devo-card">
         ${devo.imagen ? `<img class="devo-img" src="${devo.imagen}">` : ''}
@@ -811,6 +745,7 @@ async function renderGirlHome(){
         <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
         ${registroHoy ? renderEvidenceGallery(registroHoy) : ''}
       </div>` : ''}
+    </main>
   </div>`;
 
   $('#logout').onclick = ()=>{ State.currentUser=null; render('role'); };
@@ -1061,10 +996,10 @@ function renderLeaderLogin(){
     </div>
   </div>`;
   $('#back').onclick = ()=>render('role');
-  $('#enter').onclick = async ()=>{
+  $('#enter').onclick = ()=>{
     if($('#pin').value.trim() !== State.config.leaderPin){ $('#err').style.display='block'; return; }
     State.leaderAuthed = true;
-    await render('leaderHome');
+    render('leaderHome');
   };
 }
 
@@ -1075,62 +1010,41 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      <button id="logout" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);">🚪 Salir</button>
+      <button class="icon-btn" id="logout">Salir</button>
     </div>
+    <main>
       <div class="tabs">
         <div class="tab" data-t="hoy">Hoy</div>
         <div class="tab" data-t="resumen">Resumen</div>
         <div class="tab" data-t="devocionales">Devocionales</div>
         <div class="tab" data-t="senoritas">Señoritas</div>
-        <div class="tab" data-t="config">⚙️ Configuración</div>
       </div>
       <div id="tabBody"></div>
+    </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
   document.querySelectorAll('.tab').forEach(t=>{
-    t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab().catch(e=>console.error('Error:', e)); };
+    t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
   });
   paintTabs();
-  await renderTab();
+  renderTab();
 }
 function paintTabs(){
   document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.t===State.tab));
 }
-async function renderTab(){
-  try{
-    console.log('🔄 Renderizando tab:', State.tab);
-    if(State.tab==='hoy') return await renderTabHoy();
-    if(State.tab==='resumen') return await renderTabResumen();
-    if(State.tab==='devocionales') return await renderTabDevocionales();
-    if(State.tab==='senoritas') return await renderTabSenoritas();
-    if(State.tab==='config') return await renderTabConfig();
-  }catch(err){
-    console.error('❌ Error en renderTab:', err);
-    const body = document.getElementById('tabBody');
-    if(body){
-      body.innerHTML = `<div style="text-align:center;padding:30px;color:var(--danger);">
-        ⚠️ Error: No se pudo cargar el contenido<br>
-        <small>${err.message}</small>
-      </div>`;
-    }
-  }
+function renderTab(){
+  if(State.tab==='hoy') return renderTabHoy();
+  if(State.tab==='resumen') return renderTabResumen();
+  if(State.tab==='devocionales') return renderTabDevocionales();
+  if(State.tab==='senoritas') return renderTabSenoritas();
 }
 
 /* --- TAB: HOY --- */
 async function renderTabHoy(){
   const body = $('#tabBody');
-  if(!body) return;
-  body.innerHTML = '<div style="text-align:center;padding:30px;">Cargando...</div>';
-  
-  try{
-    if(!State.names || State.names.length === 0){
-      body.innerHTML = '<div style="text-align:center;padding:30px;">No hay datos</div>';
-      return;
-    }
-    
-    const today = todayStr();
-    let keys = [];
-    try{ keys = await sList('registro:'+today+':'); }catch(e){ console.log('No hay registros hoy'); }
+  body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando...</div>';
+  const today = todayStr();
+  const keys = await sList('registro:'+today+':');
   const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
   const total = State.names.length;
   const yes = submittedIds.size;
@@ -1178,19 +1092,8 @@ function rosterRowHTML(n, has, mode, pct){
 
 /* --- TAB: RESUMEN --- */
 async function renderTabResumen(){
-  try{
   const body = $('#tabBody');
-  if(!body){
-    console.error('❌ #tabBody no encontrado');
-    return;
-  }
   body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Calculando avance...</div>';
-  
-  if(!State.names || State.names.length === 0){
-    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">⚠️ Error: No hay señoritas cargadas</div>';
-    return;
-  }
-  
   const today = new Date();
   const dim = daysInMonth(today.getFullYear(), today.getMonth()+1);
   const mKey = monthKey(todayStr());
@@ -1394,112 +1297,6 @@ async function renderTabSenoritas(){
   });
 }
 
-
-/* --- TAB: CONFIGURACIÓN --- */
-async function renderTabConfig(){
-  const body = $('#tabBody');
-  body.innerHTML = `
-    <div class="section-title"><div><h2>⚙️ Configuración</h2><p>Gestiona la configuración de la app</p></div></div>
-    
-    <div class="card" style="margin:16px 0;padding:16px;background:linear-gradient(135deg, #f5e6f0, white);border:2px solid var(--fuchsia);">
-      <h3 style="margin-top:0;color:var(--primary-dark);">🔐 Cambiar tu PIN de acceso</h3>
-      <p style="color:var(--ink-soft);font-size:13px;">Ingresa el PIN actual y elige uno nuevo para tu acceso como líder</p>
-      
-      <div style="margin:16px 0;">
-        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">🔓 PIN actual (el que usas ahora):</label>
-        <input type="password" id="currentPin" placeholder="Ej: 1234" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
-        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Verifica que sea correcto</p>
-      </div>
-      
-      <div style="margin:16px 0;">
-        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">✨ Nuevo PIN (que TÚ ELIJAS):</label>
-        <input type="password" id="newPin" placeholder="Ej: 5678" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
-        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Debe tener 4 dígitos numéricos</p>
-      </div>
-      
-      <div style="margin:16px 0;">
-        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">🔐 Confirma tu nuevo PIN:</label>
-        <input type="password" id="confirmPin" placeholder="Repite: 5678" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
-        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Repite exactamente el mismo PIN</p>
-      </div>
-      
-      <button id="changePinBtn" class="btn btn-primary" style="width:100%;padding:14px;background:linear-gradient(135deg, var(--primary-dark), #a85f8f);border:none;border-radius:8px;color:white;font-weight:bold;font-size:15px;cursor:pointer;">Cambiar a mi nuevo PIN</button>
-      <div id="pinMessage" style="margin-top:12px;padding:12px;border-radius:8px;text-align:center;font-size:13px;display:none;font-weight:600;"></div>
-    </div>
-  `;
-  
-  document.getElementById('changePinBtn').onclick = async ()=>{
-    const currentPin = document.getElementById('currentPin').value;
-    const newPin = document.getElementById('newPin').value;
-    const confirmPin = document.getElementById('confirmPin').value;
-    const msgDiv = document.getElementById('pinMessage');
-    
-    // Validaciones
-    if(!currentPin || !newPin || !confirmPin){
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--danger)20';
-      msgDiv.style.color = 'var(--danger)';
-      msgDiv.textContent = '⚠️ Completa TODOS los campos, por favor';
-      return;
-    }
-    
-    if(currentPin !== State.config.leaderPin){
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--danger)20';
-      msgDiv.style.color = 'var(--danger)';
-      msgDiv.textContent = '❌ El PIN actual es incorrecto. Verifica e intenta de nuevo';
-      return;
-    }
-    
-    if(newPin.length !== 4 || !newPin.match(/^\d{4}$/)){
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--danger)20';
-      msgDiv.style.color = 'var(--danger)';
-      msgDiv.textContent = '❌ El nuevo PIN debe tener EXACTAMENTE 4 dígitos';
-      return;
-    }
-    
-    if(newPin !== confirmPin){
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--danger)20';
-      msgDiv.style.color = 'var(--danger)';
-      msgDiv.textContent = '❌ Los dos PINs nuevos NO coinciden. Verifica e intenta de nuevo';
-      return;
-    }
-    
-    if(newPin === currentPin){
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--gold)20';
-      msgDiv.style.color = 'var(--gold)';
-      msgDiv.textContent = '⚠️ El nuevo PIN es igual al actual. Elige uno diferente';
-      return;
-    }
-    
-    // Guardar nuevo PIN
-    try {
-      await sSet('config', { leaderPin: newPin });
-      State.config.leaderPin = newPin;
-      
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--success)20';
-      msgDiv.style.color = 'var(--success)';
-      msgDiv.textContent = '✅ ¡¡¡Tu PIN ha sido cambiado exitosamente!!! Ahora usa: ' + newPin;
-      
-      // Limpiar campos
-      setTimeout(()=>{
-        document.getElementById('currentPin').value = '';
-        document.getElementById('newPin').value = '';
-        document.getElementById('confirmPin').value = '';
-      }, 3000);
-    } catch(err){
-      msgDiv.style.display = 'block';
-      msgDiv.style.background = 'var(--danger)20';
-      msgDiv.style.color = 'var(--danger)';
-      msgDiv.textContent = '❌ Error al cambiar PIN. Intenta de nuevo';
-    }
-  };
-}
-
 /* --- MODAL: girl detail (leader) --- */
 async function openGirlModal(id, dateStr){
   const n = State.names.find(x=>x.id===id);
@@ -1545,17 +1342,7 @@ async function openGirlModal(id, dateStr){
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
-
-// MONITOR DE CARGA - Mostrar progreso
-document.body.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#FDF5F8;display:flex;align-items:center;justify-content:center;font-family:Inter;color:#93547A;"><div style="text-align:center;"><div style="font-size:24px;margin-bottom:20px;">🌸 Cargando Mi Devocional...</div><div style="font-size:14px;color:#D9B368;">Por favor espera...</div></div></div>';
-
-setTimeout(() => {
-  init().catch(err => {
-    console.error('❌ Error crítico:', err);
-    document.body.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#FDF5F8;display:flex;align-items:center;justify-content:center;font-family:Inter;"><div style="text-align:center;"><div style="color:#C97676;font-size:18px;margin-bottom:20px;">⚠️ Error al cargar</div><div style="color:#93547A;font-size:14px;margin-bottom:20px;">Por favor recarga la página</div><button onclick="location.reload()" style="background:#93547A;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Recargar</button></div></div></div>';
-  });
-}, 100);
-
+init();
 </script>
 </body>
 </html>
