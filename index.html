@@ -894,15 +894,16 @@ async function renderGirlHome(){
     if(!mainContent) return;
     
     mainContent.innerHTML = `
-      <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:4px 0;">
+      <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:4px 0;align-items:center;">
         ${[1,0].map(daysAgo=>{
           const d = addDaysToStr(today, -daysAgo);
           const isSelected = d === selectedDate;
           return `<button class="day-btn ${isSelected?'active':''}" data-date="${d}" style="padding:8px 12px;border-radius:8px;border:2px solid ${isSelected?'var(--primary-dark)':'var(--line)'};background:${isSelected?'var(--primary-dark)20':'transparent'};color:var(--ink);cursor:pointer;font-size:12px;font-weight:${isSelected?'700':'500'};white-space:nowrap;">${d===today?'Hoy':d===addDaysToStr(today,-1)?'Ayer':'Hace 2 días'}<br><small style="opacity:0.6;">${fmtDateShort(d)}</small></button>`;
         }).join('')}
+        <button id="logoutGirl" style="padding:8px 14px;background:var(--primary-dark);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;margin-left:auto;">🚪 Salir</button>
       </div>
 
-      <button id="logoutGirl" style="padding:8px 12px;background:#C97676;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;margin-left:auto;">🚪 Salir</button><span class="date-chip">${fmtDateLong(selectedDate)}</span>
+      <span class="date-chip">${fmtDateLong(selectedDate)}</span>
       ${devo ? `
       <div class="devo-card">
         ${devo.imagen ? `<img class="devo-img" src="${devo.imagen}">` : ''}
@@ -944,11 +945,14 @@ async function renderGirlHome(){
 
     // Event listeners para botones de día
     document.querySelectorAll('.day-btn').forEach(btn=>{
-
-    const logoutBtn = document.getElementById('logoutGirl');
-    if(logoutBtn) logoutBtn.onclick = () => { State.currentUser = null; render('role'); };
       btn.onclick = ()=>loadDay(btn.dataset.date);
     });
+
+    // Event listener para botón Salir
+    const logoutBtn = document.getElementById('logoutGirl');
+    if(logoutBtn){
+      logoutBtn.onclick = ()=>{ State.currentUser = null; render('role'); };
+    }
 
     // Event listener para subir evidencia
     const sealBtn = document.getElementById('sealBtn');
