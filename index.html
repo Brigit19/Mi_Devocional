@@ -2,20 +2,34 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#8B5A8D">
-<title>Mi Devocional - Casa Apostólica Belén</title>
+<meta name="description" content="Cuaderno Devocional Digital para el Ministerio Juvenil de Casa Apostólica Belén">
+
+<!-- PWA - INSTALACIÓN EN CELULAR -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Devocional">
+<meta name="apple-mobile-web-app-status-bar" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%238B5A8D' width='180' height='180'/><g transform='translate(90,90)'><path d='M -40 -50 L -40 50 Q 0 60 40 50 L 40 -50 Q 0 -60 -40 -50' fill='white'/><text x='-15' y='-50' font-size='24' fill='%23F5E6D3'>🌷</text></g></svg>">
+
+<!-- MANIFEST Y SERVICE WORKER -->
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23FFFFFF' width='192' height='192' rx='40'/><g transform='translate(96,96)'><path d='M -40 -50 L -40 50 Q 0 60 40 50 L 40 -50 Q 0 -60 -40 -50' fill='%238B5A8D' stroke='%23D89BB8' stroke-width='2'/><path d='M -35 -40 L -35 40' stroke='%23D89BB8' stroke-width='1.5' opacity='0.6'/><line x1='-30' y1='-35' x2='35' y2='-35' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-25' x2='35' y2='-25' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-15' x2='35' y2='-15' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-5' x2='35' y2='-5' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='5' x2='35' y2='5' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='15' x2='35' y2='15' stroke='%23F5E6D3' stroke-width='1.5'/><text x='-15' y='-50' font-size='24' fill='%23D89BB8'>🌷</text></g></svg>">
+
+<title>Mi Devocional - Casa Apostólica Belén</title>
+
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; }
 :root { --primary: #8B5A8D; --secondary: #D89BB8; --accent: #F5E6D3; --bg: #F8E8F0; --ink: #4A3F47; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-user-select: none; user-select: none; }
 body.dark { background: #1a1a1a; color: #f0f0f0; --bg: #1a1a1a; }
 .banner { background: linear-gradient(135deg, #D89BB8, #8B5A8D); color: white; padding: 12px; text-align: center; font-size: 13px; position: sticky; top: 0; z-index: 200; }
-.banner button { background: white; color: #8B5A8D; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.banner button { background: white; color: #8B5A8D; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; }
 .topbar { background: linear-gradient(135deg, #8B5A8D, #A574A0); color: white; padding: 14px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 44px; z-index: 100; }
 .topbar h1 { font-size: 18px; font-weight: 600; }
-button { border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 500; font-size: 14px; }
+button { border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 500; font-size: 14px; -webkit-tap-highlight-color: transparent; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-secondary { background: var(--secondary); color: var(--primary); }
 .btn-danger { background: #C9647F; color: white; }
@@ -24,7 +38,7 @@ button { border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; 
 body.dark .card { background: #222; border-color: #333; }
 .container { padding: 14px; }
 h2 { color: var(--primary); margin-bottom: 10px; font-size: 20px; font-weight: 700; }
-input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 2px solid #E8D5E0; border-radius: 8px; font-size: 14px; font-family: inherit; }
+input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 2px solid #E8D5E0; border-radius: 8px; font-size: 14px; font-family: inherit; -webkit-appearance: none; }
 body.dark input, body.dark select { background: #333; color: white; border-color: #555; }
 .avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #D89BB8, #8B5A8D); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; }
 .header { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; background: white; padding: 10px; border-radius: 12px; border: 1px solid #E8D5E0; }
@@ -44,7 +58,7 @@ body.dark .header { background: #222; border-color: #333; }
 .role-card-icon { font-size: 42px; }
 .role-card-content h3 { margin: 0; font-size: 16px; color: var(--primary); }
 .role-card-content p { margin: 3px 0 0 0; color: #999; font-size: 12px; }
-.install-banner { background: white; border: 2px dashed #D89BB8; border-radius: 10px; padding: 12px; margin: 10px; text-align: center; color: var(--primary); font-size: 12px; }
+.install-banner { background: white; border: 2px dashed #D89BB8; border-radius: 10px; padding: 12px; margin: 10px; text-align: center; color: var(--primary); font-size: 12px; line-height: 1.4; }
 .tab { padding: 8px 12px; background: #f0f0f0; border: none; border-radius: 16px; cursor: pointer; font-weight: 500; margin: 4px; white-space: nowrap; font-size: 13px; }
 .tab.active { background: var(--secondary); color: var(--primary); }
 .girl-item { background: white; border: 1px solid #E8D5E0; border-radius: 10px; padding: 10px; margin: 6px 0; display: flex; align-items: center; gap: 10px; }
@@ -52,27 +66,36 @@ body.dark .girl-item { background: #222; border-color: #333; }
 .girl-name { font-weight: 600; font-size: 14px; }
 .girl-stats { font-size: 11px; color: #999; margin-top: 2px; }
 .tabs { display: flex; gap: 6px; padding: 10px; overflow-x: auto; margin-bottom: 10px; }
-.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal-content { background: white; border-radius: 14px; padding: 20px; max-width: 90%; max-height: 80vh; overflow-y: auto; }
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; justify-content: center; z-index: 1000; }
+.modal-content { background: white; border-radius: 14px 14px 0 0; padding: 20px; width: 100%; max-height: 80vh; overflow-y: auto; }
 body.dark .modal-content { background: #222; }
 </style>
 </head>
 <body>
 <div id="app"></div>
 
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('✅ Service Worker registrado');
+  }).catch(err => {
+    console.error('❌ Error al registrar SW:', err);
+  });
+}
+</script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
 const firebaseConfig={apiKey:"AIzaSyA5pDctj0BpY0KV-lLkxmfyXQd87wND8Us",authDomain:"mi-devocional-663d3.firebaseapp.com",projectId:"mi-devocional-663d3",storageBucket:"mi-devocional-663d3.firebasestorage.app",messagingSenderId:"338063743895",appId:"1:338063743895:web:1578e6298f0d8b2b3982d2"};
-
 let db=null;
 try { firebase.initializeApp(firebaseConfig); db=firebase.firestore(); }catch(e){}
 
 const GIRLS=["Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay Loayza","Lady Berrospi","María Angela Vasquez Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco","Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorleni Collazos Castro","Isabel Nancy Luna Vasquez","Katherin Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco","Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeon","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari","Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Ines Carhuallanqui Obregón","Maria Fernanda Tinoco Palacios","Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha","Lucero Isidro Castro","Alcira Sanchez Quispe","Andrea Jasmin Flores Santamaria","Iyari Lazaro","Marilyn Rosa Huayanay Torres","Very Luz Condezo Baltazar","Anahi Anette Alvarez Collahuacho","Laura Sanchez Quispe","Nicole Huaranga Reyes"];
 
 let State={screen:"role",user:null,leaderAuth:false,date:null,darkMode:false,tab:"hoy"};
-const APP_VERSION="2026-08-24-completo-v2";
+const APP_VERSION="2026-08-24-completo-v3";
 
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
@@ -83,162 +106,39 @@ function initDark(){if(localStorage.getItem('darkMode')==='true'){State.darkMode
 async function sGet(k){try{if(!db)return null;const d=await db.collection('kv').doc(k).get();return d.exists?JSON.parse(d.data().value):null;}catch(e){return null;}}
 async function sSet(k,v){try{if(!db)return false;await db.collection('kv').doc(k).set({value:JSON.stringify(v)});return true;}catch(e){return false;}}
 
-async function checkVersion(){
-  try{
-    const res=await fetch('version.json?t='+Date.now());
-    if(!res.ok)return false;
-    const v=await res.json();
-    return v.version!==APP_VERSION;
-  }catch(e){return false;}
-}
+async function checkVersion(){try{const res=await fetch('version.json?t='+Date.now());if(!res.ok)return false;const v=await res.json();return v.version!==APP_VERSION;}catch(e){return false;}}
 
 function render(){initDark();const a=document.getElementById("app");if(State.screen==="role")renderRole();else if(State.screen==="girlLogin")renderGirlLogin();else if(State.screen==="girlHome")renderGirlHome();else if(State.screen==="leaderLogin")renderLeaderLogin();else if(State.screen==="leaderHome")renderLeaderHome();}
 
 async function renderRole(){
-  document.getElementById("app").innerHTML=`<div class="role-screen"><button class="dark-toggle" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button><div style="text-align:center"><div style="font-size:72px;margin-bottom:16px">🌷</div><h1 style="font-size:32px;margin-bottom:6px;font-weight:700">Mi Devocional</h1><p style="font-size:16px;opacity:0.95;margin-bottom:36px">Casa Apostólica Belén</p><div onclick="State.screen='girlLogin';render()" class="role-card"><div class="role-card-icon">🌸</div><div class="role-card-content"><h3>Soy Señorita</h3><p>Ver devocional y subir evidencia</p></div></div><div onclick="State.screen='leaderLogin';render()" class="role-card"><div class="role-card-icon">💎</div><div class="role-card-content"><h3>Soy Líder</h3><p>Publicar devocionales</p></div></div></div><div class="install-banner"><div style="font-size:18px;margin-bottom:6px">📱 Instala la app</div><div>Presiona ⬆️ y elige "Agregar a pantalla de inicio"</div></div></div>`;
+  document.getElementById("app").innerHTML=`<div class="role-screen"><button class="dark-toggle" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button><div style="text-align:center"><div style="font-size:72px;margin-bottom:16px">🌷</div><h1 style="font-size:32px;margin-bottom:6px;font-weight:700">Mi Devocional</h1><p style="font-size:16px;opacity:0.95;margin-bottom:36px">Casa Apostólica Belén</p><div onclick="State.screen='girlLogin';render()" class="role-card"><div class="role-card-icon">🌸</div><div class="role-card-content"><h3>Soy Señorita</h3><p>Ver devocional</p></div></div><div onclick="State.screen='leaderLogin';render()" class="role-card"><div class="role-card-icon">💎</div><div class="role-card-content"><h3>Soy Líder</h3><p>Publicar devocionales</p></div></div></div><div class="install-banner"><div style="font-size:18px;margin-bottom:6px">📱 Instala la app</div><div><strong>Android:</strong> Presiona ⋮ → "Instalar app"<br><strong>iPhone:</strong> Presiona ⬆️ → "Agregar a pantalla de inicio"</div></div></div>`;
   const hasUpdate=await checkVersion();
-  if(hasUpdate){
-    const banner=document.createElement('div');
-    banner.className='banner';
-    banner.innerHTML='✨ Hay una nueva versión <button onclick="location.reload()">Actualizar</button>';
-    document.body.insertBefore(banner, document.body.firstChild);
-  }
+  if(hasUpdate){const banner=document.createElement('div');banner.className='banner';banner.innerHTML='✨ Nueva versión <button onclick="location.reload()">Actualizar</button>';document.body.insertBefore(banner, document.body.firstChild);}
 }
 
-function renderGirlLogin(){
-  const opts=GIRLS.map(g=>`<option value="${g}">${g}</option>`).join("");
-  document.getElementById("app").innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Ingresa</h1><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button></div><div class="container" style="max-width:380px;margin:50px auto"><div class="card"><h2>Inicio de Sesión</h2><select id="girlName"><option>Selecciona...</option>${opts}</select><input type="password" id="girlPin" maxlength="4" placeholder="PIN"><button class="btn-primary" onclick="loginGirl()" style="width:100%;margin-top:12px">Entrar</button><button class="btn-secondary" onclick="State.screen='role';render()" style="width:100%;margin-top:8px">Atrás</button><div class="error" id="err"></div></div></div>`;
-  checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Hay una nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});
-}
+function renderGirlLogin(){const opts=GIRLS.map(g=>`<option value="${g}">${g}</option>`).join("");document.getElementById("app").innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Ingresa</h1><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button></div><div class="container" style="max-width:380px;margin:50px auto"><div class="card"><h2>Inicio de Sesión</h2><select id="girlName"><option>Selecciona...</option>${opts}</select><input type="password" id="girlPin" maxlength="4" placeholder="PIN"><button class="btn-primary" onclick="loginGirl()" style="width:100%;margin-top:12px">Entrar</button><button class="btn-secondary" onclick="State.screen='role';render()" style="width:100%;margin-top:8px">Atrás</button><div class="error" id="err"></div></div></div>`;checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});}
 
-async function loginGirl(){
-  const n=document.getElementById("girlName").value;
-  const p=document.getElementById("girlPin").value;
-  const e=document.getElementById("err");
-  e.style.display="none";
-  if(!n||n==="Selecciona..."){e.textContent="❌ Selecciona nombre";e.style.display="block";return;}
-  const stored=await sGet('pin:'+n)||{pin:"0000"};
-  const activo=await sGet('activo:'+n)||{active:true};
-  if(!activo.active){e.textContent="❌ Tu cuenta está suspendida";e.style.display="block";return;}
-  if(p!==stored.pin){e.textContent="❌ PIN incorrecto";e.style.display="block";return;}
-  State.user=n;State.date=today();State.screen="girlHome";render();
-}
+async function loginGirl(){const n=document.getElementById("girlName").value;const p=document.getElementById("girlPin").value;const e=document.getElementById("err");e.style.display="none";if(!n||n==="Selecciona..."){e.textContent="❌ Selecciona nombre";e.style.display="block";return;}const stored=await sGet('pin:'+n)||{pin:"0000"};const activo=await sGet('activo:'+n)||{active:true};if(!activo.active){e.textContent="❌ Suspendida";e.style.display="block";return;}if(p!==stored.pin){e.textContent="❌ PIN incorrecto";e.style.display="block";return;}State.user=n;State.date=today();State.screen="girlHome";render();}
 
-async function renderGirlHome(){
-  const app=document.getElementById("app");
-  const t=today();const y=addDays(t,-1);
-  const sd=State.date||t;
-  
-  app.innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Mi Devocional</h1><div style="display:flex;gap:6px"><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button><button class="btn-danger" onclick="State.user=null;State.screen='role';render()">Salir</button></div></div><div class="container"><div class="header"><div class="avatar">${initials(State.user)}</div><div class="header-info"><h2>${State.user}</h2><p>MINISTERIO JUVENIL</p></div></div><div class="date-buttons"><button class="date-button ${sd===y?'active':''}" onclick="State.date='${y}';render()">← Ayer</button><button class="date-button ${sd===t?'active':''}" onclick="State.date='${t}';render()">Hoy</button></div><div class="card" id="devoCard"><h2>📖 Devocional</h2><p style="color:#999">Cargando...</p></div><div class="card"><h2>📸 Evidencia</h2><input type="file" id="files" multiple accept="image/*"><button class="btn-primary" onclick="upload()" style="width:100%;margin-top:8px">Subir</button><div class="success" id="suc"></div><div class="error" id="err"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 6px"><div class="stat-card"><div style="font-size:11px">🔥 Racha</div><div class="stat-number" id="racha">0</div></div><div class="stat-card"><div style="font-size:11px">📊 Mes</div><div class="stat-number" id="pct">0%</div></div></div></div>`;
-  
-  checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Hay una nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});
-  
-  const devo=await sGet('devocional:'+sd);
-  const dCard=document.getElementById("devoCard");
-  if(devo&&devo.texto){dCard.innerHTML=`<h2>📖 ${sd}</h2><p>${devo.texto}</p>`;}else{dCard.innerHTML=`<div style="text-align:center;padding:20px;color:#999"><div style="font-size:40px">📖</div><p>No hay devocional para este día</p></div>`;}
-  
-  const st=await sGet('streak:'+State.user)||{racha:0};
-  const sp=await sGet('stats:'+State.user+':'+t)||{pct:0};
-  document.getElementById("racha").textContent=st.racha;
-  document.getElementById("pct").textContent=sp.pct+"%";
-}
+async function renderGirlHome(){const app=document.getElementById("app");const t=today();const y=addDays(t,-1);const sd=State.date||t;app.innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Mi Devocional</h1><div style="display:flex;gap:6px"><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button><button class="btn-danger" onclick="State.user=null;State.screen='role';render()">Salir</button></div></div><div class="container"><div class="header"><div class="avatar">${initials(State.user)}</div><div class="header-info"><h2>${State.user}</h2><p>MINISTERIO JUVENIL</p></div></div><div class="date-buttons"><button class="date-button ${sd===y?'active':''}" onclick="State.date='${y}';render()">← Ayer</button><button class="date-button ${sd===t?'active':''}" onclick="State.date='${t}';render()">Hoy</button></div><div class="card" id="devoCard"><h2>📖 Devocional</h2><p style="color:#999">Cargando...</p></div><div class="card"><h2>📸 Evidencia</h2><input type="file" id="files" multiple accept="image/*"><button class="btn-primary" onclick="upload()" style="width:100%;margin-top:8px">Subir</button><div class="success" id="suc"></div><div class="error" id="err"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 6px"><div class="stat-card"><div style="font-size:11px">🔥 Racha</div><div class="stat-number" id="racha">0</div></div><div class="stat-card"><div style="font-size:11px">📊 Mes</div><div class="stat-number" id="pct">0%</div></div></div></div>`;checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});const devo=await sGet('devocional:'+sd);const dCard=document.getElementById("devoCard");if(devo&&devo.texto){dCard.innerHTML=`<h2>📖 ${sd}</h2><p>${devo.texto}</p>`;}else{dCard.innerHTML=`<div style="text-align:center;padding:20px;color:#999"><div style="font-size:40px">📖</div><p>No hay devocional</p></div>`;}const st=await sGet('streak:'+State.user)||{racha:0};const sp=await sGet('stats:'+State.user+':'+t)||{pct:0};document.getElementById("racha").textContent=st.racha;document.getElementById("pct").textContent=sp.pct+"%";}
 
-function upload(){
-  const f=document.getElementById("files").files;
-  const s=document.getElementById("suc");const e=document.getElementById("err");
-  s.style.display="none";e.style.display="none";
-  if(!f.length){e.textContent="❌ Selecciona fotos";e.style.display="block";return;}
-  s.textContent="📸 Guardando...";s.style.display="block";
-  setTimeout(()=>{s.textContent="✅ ¡Guardado!";},1500);
-}
+function upload(){const f=document.getElementById("files").files;const s=document.getElementById("suc");const e=document.getElementById("err");s.style.display="none";e.style.display="none";if(!f.length){e.textContent="❌ Selecciona fotos";e.style.display="block";return;}s.textContent="📸 Guardando...";s.style.display="block";setTimeout(()=>{s.textContent="✅ ¡Guardado!";},1500);}
 
-function renderLeaderLogin(){
-  document.getElementById("app").innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Líder</h1><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button></div><div class="container" style="max-width:380px;margin:50px auto"><div class="card"><h2>PIN de Líder</h2><input type="password" id="pin" maxlength="4" placeholder="••••"><button class="btn-primary" onclick="loginLeader()" style="width:100%;margin-top:12px">Entrar</button><button class="btn-secondary" onclick="State.screen='role';render()" style="width:100%;margin-top:8px">Atrás</button><div class="error" id="err"></div></div></div>`;
-  checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Hay una nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});
-}
+function renderLeaderLogin(){document.getElementById("app").innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Líder</h1><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button></div><div class="container" style="max-width:380px;margin:50px auto"><div class="card"><h2>PIN Líder</h2><input type="password" id="pin" maxlength="4" placeholder="••••"><button class="btn-primary" onclick="loginLeader()" style="width:100%;margin-top:12px">Entrar</button><button class="btn-secondary" onclick="State.screen='role';render()" style="width:100%;margin-top:8px">Atrás</button><div class="error" id="err"></div></div></div>`;checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});}
 
-function loginLeader(){
-  const p=document.getElementById("pin").value;
-  const e=document.getElementById("err");
-  e.style.display="none";
-  if(p!=="1234"){e.textContent="❌ PIN incorrecto";e.style.display="block";return;}
-  State.leaderAuth=true;State.screen="leaderHome";State.tab="hoy";render();
-}
+function loginLeader(){const p=document.getElementById("pin").value;const e=document.getElementById("err");e.style.display="none";if(p!=="1234"){e.textContent="❌ PIN incorrecto";e.style.display="block";return;}State.leaderAuth=true;State.screen="leaderHome";State.tab="hoy";render();}
 
-async function renderLeaderHome(){
-  const app=document.getElementById("app");
-  const t=today();
-  
-  app.innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Panel Líder</h1><div style="display:flex;gap:6px"><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button><button class="btn-danger" onclick="State.leaderAuth=false;State.screen='role';render()">Salir</button></div></div><div class="tabs"><button class="tab ${State.tab==='hoy'?'active':''}" onclick="State.tab='hoy';renderLeaderHome()">📅 Hoy</button><button class="tab ${State.tab==='resumen'?'active':''}" onclick="State.tab='resumen';renderLeaderHome()">📊 Resumen</button><button class="tab ${State.tab==='devos'?'active':''}" onclick="State.tab='devos';renderLeaderHome()">📖 Devocionales</button><button class="tab ${State.tab==='girls'?'active':''}" onclick="State.tab='girls';renderLeaderHome()">👥 Señoritas</button><button class="tab ${State.tab==='config'?'active':''}" onclick="State.tab='config';renderLeaderHome()">⚙️ Config</button></div><div class="container" id="content"></div>`;
-  
-  checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Hay una nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});
-  
-  const content=document.getElementById("content");
-  const t_str=today();
-  
-  if(State.tab==="hoy"){
-    content.innerHTML=`<div class="card"><h2>📅 ${t}</h2><div id="list"></div></div>`;
-    let html="";for(let g of GIRLS){const r=await sGet('registro:'+t+':'+g);const act=await sGet('activo:'+g)||{active:true};html+=`<div class="girl-item"><div class="avatar" style="width:36px;height:36px;font-size:14px">${initials(g)}</div><div style="flex:1"><div class="girl-name">${g}</div><div class="girl-stats">${r?'✅ Subió':'❌ Sin subir'}${!act.active?' (SUSPENDIDA)':''}</div></div></div>`;}
-    document.getElementById("list").innerHTML=html;
-  }
-  else if(State.tab==="resumen"){
-    content.innerHTML=`<div class="card"><h2>📊 Resumen</h2><p>Total: ${GIRLS.length} señoritas</p><p style="color:#999">Datos desde Firebase</p></div>`;
-  }
-  else if(State.tab==="devos"){
-    content.innerHTML=`<div class="card"><h2>📖 Devocional</h2><input type="date" id="dd" value="${today()}"><textarea id="dt" placeholder="Verso..." style="height:100px"></textarea><button class="btn-primary" onclick="saveDevo()" style="width:100%;margin-top:10px">Guardar</button><div class="success" id="ds"></div></div>`;
-  }
-  else if(State.tab==="girls"){
-    content.innerHTML=`<div class="card"><h2>👥 Señoritas</h2><div id="list"></div></div>`;
-    let html="";for(let g of GIRLS){const s=await sGet('stats:'+g+':'+t)||{pct:0};const k=await sGet('streak:'+g)||{racha:0};const act=await sGet('activo:'+g)||{active:true};html+=`<div class="girl-item"><div class="avatar" style="width:36px;height:36px;font-size:14px">${initials(g)}</div><div style="flex:1"><div class="girl-name">${g}</div><div class="girl-stats">📊 ${s.pct}% | 🔥 ${k.racha}${!act.active?' | 🚫':''}</div></div><button class="btn-secondary" onclick="editGirl('${g}')" style="padding:6px;font-size:12px">Editar</button></div>`;}
-    document.getElementById("list").innerHTML=html;
-  }
-  else if(State.tab==="config"){
-    content.innerHTML=`<div class="card"><h2>⚙️ Cambiar PIN Líder</h2><input type="password" id="cp" maxlength="4" placeholder="Actual"><input type="password" id="np" maxlength="4" placeholder="Nuevo"><input type="password" id="cf" maxlength="4" placeholder="Confirmar"><button class="btn-primary" onclick="changePin()" style="width:100%;margin-top:10px">Guardar</button><div class="success" id="ps"></div><div class="error" id="pe"></div></div>`;
-  }
-}
+async function renderLeaderHome(){const app=document.getElementById("app");const t=today();app.innerHTML=`<div class="banner" id="banner"></div><div class="topbar"><h1>Panel Líder</h1><div style="display:flex;gap:6px"><button class="btn-icon" onclick="toggleDark()">${State.darkMode?'☀️':'🌙'}</button><button class="btn-danger" onclick="State.leaderAuth=false;State.screen='role';render()">Salir</button></div></div><div class="tabs"><button class="tab ${State.tab==='hoy'?'active':''}" onclick="State.tab='hoy';renderLeaderHome()">📅 Hoy</button><button class="tab ${State.tab==='resumen'?'active':''}" onclick="State.tab='resumen';renderLeaderHome()">📊 Resumen</button><button class="tab ${State.tab==='devos'?'active':''}" onclick="State.tab='devos';renderLeaderHome()">📖 Devocionales</button><button class="tab ${State.tab==='girls'?'active':''}" onclick="State.tab='girls';renderLeaderHome()">👥 Señoritas</button><button class="tab ${State.tab==='config'?'active':''}" onclick="State.tab='config';renderLeaderHome()">⚙️ Config</button></div><div class="container" id="content"></div>`;checkVersion().then(hasUpdate=>{if(hasUpdate){document.getElementById("banner").innerHTML='✨ Nueva versión <button onclick="location.reload()">Actualizar</button>';}else{document.getElementById("banner").style.display='none';}});const content=document.getElementById("content");if(State.tab==="hoy"){content.innerHTML=`<div class="card"><h2>📅 ${t}</h2><div id="list"></div></div>`;let html="";for(let g of GIRLS){const r=await sGet('registro:'+t+':'+g);const act=await sGet('activo:'+g)||{active:true};html+=`<div class="girl-item"><div class="avatar" style="width:36px;height:36px;font-size:14px">${initials(g)}</div><div style="flex:1"><div class="girl-name">${g}</div><div class="girl-stats">${r?'✅ Subió':'❌ Sin subir'}${!act.active?' 🚫':''}</div></div></div>`;}document.getElementById("list").innerHTML=html;}else if(State.tab==="resumen"){content.innerHTML=`<div class="card"><h2>📊 Resumen</h2><p>Total: ${GIRLS.length}</p><p style="color:#999">Datos desde Firebase</p></div>`;}else if(State.tab==="devos"){content.innerHTML=`<div class="card"><h2>📖 Devocional</h2><input type="date" id="dd" value="${today()}"><textarea id="dt" placeholder="Verso..." style="height:100px"></textarea><button class="btn-primary" onclick="saveDevo()" style="width:100%;margin-top:10px">Guardar</button><div class="success" id="ds"></div></div>`;}else if(State.tab==="girls"){content.innerHTML=`<div class="card"><h2>👥 Señoritas</h2><div id="list"></div></div>`;let html="";for(let g of GIRLS){const s=await sGet('stats:'+g+':'+t)||{pct:0};const k=await sGet('streak:'+g)||{racha:0};const act=await sGet('activo:'+g)||{active:true};html+=`<div class="girl-item"><div class="avatar" style="width:36px;height:36px;font-size:14px">${initials(g)}</div><div style="flex:1"><div class="girl-name">${g}</div><div class="girl-stats">📊 ${s.pct}% | 🔥 ${k.racha}${!act.active?' 🚫':''}</div></div><button class="btn-secondary" onclick="editGirl('${g}')" style="padding:6px;font-size:12px">Editar</button></div>`;}document.getElementById("list").innerHTML=html;}else if(State.tab==="config"){content.innerHTML=`<div class="card"><h2>⚙️ Config</h2><h3>Cambiar PIN Líder</h3><input type="password" id="cp" maxlength="4" placeholder="Actual"><input type="password" id="np" maxlength="4" placeholder="Nuevo"><input type="password" id="cf" maxlength="4" placeholder="Confirmar"><button class="btn-primary" onclick="changePin()" style="width:100%;margin-top:10px">Guardar</button><div class="success" id="ps"></div><div class="error" id="pe"></div></div>`;}}
 
-function editGirl(name){
-  const modal=`<div class="modal" onclick="if(event.target===this)renderLeaderHome()"><div class="modal-content"><h2>${name}</h2><h3>Cambiar PIN</h3><input type="password" id="np" maxlength="4" placeholder="Nuevo PIN"><button class="btn-primary" onclick="setGirlPin('${name}')" style="width:100%;margin-top:10px">Guardar PIN</button><h3 style="margin-top:20px">Estado</h3><button class="btn-secondary" id="toggleBtn" style="width:100%;margin-top:10px">Cargando...</button><div class="success" id="ms"></div></div></div>`;
-  document.getElementById("app").innerHTML=modal+document.getElementById("app").innerHTML;
-  sGet('activo:'+name).then(act=>{const btn=document.getElementById("toggleBtn");if(act&&act.active){btn.textContent="🚫 Suspender";btn.className="btn-danger";btn.onclick=()=>toggleGirl('${name}',false);}else{btn.textContent="✅ Reactivar";btn.className="btn-secondary";btn.onclick=()=>toggleGirl('${name}',true);}});
-}
+function editGirl(name){const modal=`<div class="modal" onclick="if(event.target===this)renderLeaderHome()"><div class="modal-content"><h2>${name}</h2><h3>Cambiar PIN</h3><input type="password" id="np" maxlength="4" placeholder="PIN"><button class="btn-primary" onclick="setGirlPin('${name}')" style="width:100%;margin-top:10px">Guardar PIN</button><h3 style="margin-top:20px">Estado</h3><button id="toggleBtn" style="width:100%;margin-top:10px">Cargando...</button><div class="success" id="ms"></div></div></div>`;document.getElementById("app").innerHTML=modal+document.getElementById("app").innerHTML;sGet('activo:'+name).then(act=>{const btn=document.getElementById("toggleBtn");if(act&&act.active){btn.textContent="🚫 Suspender";btn.className="btn-danger";btn.onclick=()=>toggleGirl('${name}',false);}else{btn.textContent="✅ Reactivar";btn.className="btn-secondary";btn.onclick=()=>toggleGirl('${name}',true);}});}
 
-async function setGirlPin(name){
-  const np=document.getElementById("np").value;
-  const ms=document.getElementById("ms");
-  if(np.length!==4){alert("El PIN debe tener 4 dígitos");return;}
-  await sSet('pin:'+name,{pin:np});
-  ms.textContent="✅ PIN guardado";ms.style.display="block";
-  setTimeout(()=>{renderLeaderHome();},1500);
-}
+async function setGirlPin(name){const np=document.getElementById("np").value;const ms=document.getElementById("ms");if(np.length!==4){alert("PIN debe tener 4 dígitos");return;}await sSet('pin:'+name,{pin:np});ms.textContent="✅ Guardado";ms.style.display="block";setTimeout(()=>{renderLeaderHome();},1500);}
 
-async function toggleGirl(name,active){
-  await sSet('activo:'+name,{active:active});
-  const ms=document.getElementById("ms");
-  ms.textContent=active?"✅ Reactivada":"✅ Suspendida";ms.style.display="block";
-  setTimeout(()=>{renderLeaderHome();},1500);
-}
+async function toggleGirl(name,active){await sSet('activo:'+name,{active:active});const ms=document.getElementById("ms");ms.textContent=active?"✅ Reactivada":"✅ Suspendida";ms.style.display="block";setTimeout(()=>{renderLeaderHome();},1500);}
 
-async function saveDevo(){
-  const d=document.getElementById("dd").value;
-  const t=document.getElementById("dt").value;
-  const s=document.getElementById("ds");
-  if(!t){s.textContent="❌ Escribe algo";s.style.display="block";return;}
-  await sSet('devocional:'+d,{texto:t});
-  s.textContent="✅ Guardado";s.style.display="block";
-  document.getElementById("dt").value="";
-}
+async function saveDevo(){const d=document.getElementById("dd").value;const t=document.getElementById("dt").value;const s=document.getElementById("ds");if(!t){s.textContent="❌ Completa";s.style.display="block";return;}await sSet('devocional:'+d,{texto:t});s.textContent="✅ Guardado";s.style.display="block";document.getElementById("dt").value="";}
 
-function changePin(){
-  const c=document.getElementById("cp").value;
-  const n=document.getElementById("np").value;
-  const cf=document.getElementById("cf").value;
-  const s=document.getElementById("ps");const e=document.getElementById("pe");
-  e.style.display="none";s.style.display="none";
-  if(c!=="1234"){e.textContent="❌ Incorrecto";e.style.display="block";return;}
-  if(n!==cf){e.textContent="❌ No coinciden";e.style.display="block";return;}
-  s.textContent="✅ Guardado";s.style.display="block";
-}
+function changePin(){const c=document.getElementById("cp").value;const n=document.getElementById("np").value;const cf=document.getElementById("cf").value;const s=document.getElementById("ps");const e=document.getElementById("pe");e.style.display="none";s.style.display="none";if(c!=="1234"){e.textContent="❌ Incorrecto";e.style.display="block";return;}if(n!==cf){e.textContent="❌ No coinciden";e.style.display="block";return;}s.textContent="✅ Guardado";s.style.display="block";}
 
 window.toggleDark=toggleDark;window.loginGirl=loginGirl;window.upload=upload;window.loginLeader=loginLeader;window.saveDevo=saveDevo;window.changePin=changePin;window.editGirl=editGirl;window.setGirlPin=setGirlPin;window.toggleGirl=toggleGirl;window.renderLeaderHome=renderLeaderHome;
 
