@@ -438,6 +438,11 @@ function fmtDateLong(dateStr){
   const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return `${d} de ${meses[m-1]} de ${y}`;
 }
+function fmtDateShort(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${d} ${meses[m-1]}`;
+}
 function toast(msg){
   const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
@@ -523,7 +528,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-18-final";
+const APP_VERSION = "2026-07-18-day-selector";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -720,35 +725,44 @@ async function renderGirlHistory(){
 
 async function renderGirlHome(){
   main.innerHTML = `<div class="screen"><div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div></div>`;
+  
   const today = todayStr();
-  const devo = await sGet('devocional:'+today);
-  const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
-  const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
-  const stats = { racha: streak.racha, totalM: monthStats.totalM };
-  const regKey = 'registro:'+today+':'+State.currentUser.id;
-  const registroHoy = await sGet(regKey);
-  const deadline = (await sGet('deadline:'+today)) || addDaysToStr(today, 1);
-  const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(today+'T00:00:00'))/86400000);
-  let deadlineColor = 'var(--success)';
-  let deadlineIcon = '✅';
-  if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
-  else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
-
   const user = State.currentUser;
-  main.innerHTML = `
-  <div class="screen">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brand-mark"></div>
-        <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
+  
+  // Estado del día seleccionado
+  let selectedDate = sessionStorage.getItem('selectedDate') || today;
+  
+  async function loadDay(dateStr){
+    selectedDate = dateStr;
+    sessionStorage.setItem('selectedDate', dateStr);
+    
+    const devo = await sGet('devocional:'+dateStr);
+    const streak = (await sGet('streak:'+State.currentUser.id)) || { racha:0, ultimaFecha:null };
+    const monthStats = (await sGet('statsmonth:'+State.currentUser.id+':'+monthKey(today))) || { totalM:0 };
+    const stats = { racha: streak.racha, totalM: monthStats.totalM };
+    const regKey = 'registro:'+dateStr+':'+State.currentUser.id;
+    const registroDay = await sGet(regKey);
+    const deadline = (await sGet('deadline:'+dateStr)) || addDaysToStr(dateStr, 1);
+    const daysUntilDeadline = Math.round((new Date(deadline+'T23:59:59') - new Date(dateStr+'T00:00:00'))/86400000);
+    
+    let deadlineColor = 'var(--success)';
+    let deadlineIcon = '✅';
+    if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
+    else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
+
+    const mainContent = document.querySelector('main');
+    if(!mainContent) return;
+    
+    mainContent.innerHTML = `
+      <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:4px 0;">
+        ${[1,0].map(daysAgo=>{
+          const d = addDaysToStr(today, -daysAgo);
+          const isSelected = d === selectedDate;
+          return `<button class="day-btn ${isSelected?'active':''}" data-date="${d}" style="padding:8px 12px;border-radius:8px;border:2px solid ${isSelected?'var(--primary-dark)':'var(--line)'};background:${isSelected?'var(--primary-dark)20':'transparent'};color:var(--ink);cursor:pointer;font-size:12px;font-weight:${isSelected?'700':'500'};white-space:nowrap;">${d===today?'Hoy':d===addDaysToStr(today,-1)?'Ayer':'Hace 2 días'}<br><small style="opacity:0.6;">${fmtDateShort(d)}</small></button>`;
+        }).join('')}
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
-        <button class="icon-btn" id="logout">Salir</button>
-      </div>
-    </div>
-    <main>
-      <span class="date-chip">${fmtDateLong(today)}</span>
+
+      <span class="date-chip">${fmtDateLong(selectedDate)}</span>
       ${devo ? `
       <div class="devo-card">
         ${devo.imagen ? `<img class="devo-img" src="${devo.imagen}">` : ''}
@@ -756,7 +770,7 @@ async function renderGirlHome(){
       </div>` : `
       <div class="card empty-devo">
         <div class="glyph">🕊️</div>
-        <p>Aún no se publica el devocional de hoy.<br>Vuelve un poco más tarde.</p>
+        <p>Aún no se publica el devocional${selectedDate!==today?' de este día':''}.<br>Vuelve un poco más tarde.</p>
       </div>`}
 
       <div class="streak-row">
@@ -774,136 +788,94 @@ async function renderGirlHome(){
 
       ${devo ? `
       <div class="seal-zone">
-        <button class="seal ${registroHoy?'done':''}" id="sealBtn">
-          <span class="glyph">${registroHoy?'✏️':'📷'}</span>
-          <span class="cap">${registroHoy?'Editar evidencia':'Subir evidencia'}</span>
+        <button class="seal ${registroDay?'done':''}" id="sealBtn">
+          <span class="glyph">${registroDay?'✏️':'📷'}</span>
+          <span class="cap">${registroDay?'Editar evidencia':'Subir evidencia'}</span>
         </button>
-        <p class="seal-hint">${registroHoy? '¿Quieres cambiar tus fotos? Toca Editar' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
-        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
-        ${registroHoy ? renderEvidenceGallery(registroHoy) : ''}
+        <p class="seal-hint">${registroDay? '¿Quieres cambiar tus fotos? Toca Editar' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
+        <input type="file" id="fileInputDay${dateStr.replace(/-/g,'')}" accept="image/*" multiple style="display:none;">
+        ${registroDay && registroDay.fotos && registroDay.fotos.length > 0 ? `
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          ${registroDay.fotos.map((f,i)=>`<img src="${f}" style="width:60px;height:60px;border-radius:8px;cursor:pointer;object-fit:cover;" onclick="openImageViewer('${f}');">`).join('')}
+        </div>` : ''}
+        ${registroDay && registroDay.hora ? `<p style="text-align:center;font-size:12px;color:var(--ink-soft);margin-top:12px;">Subido: ${registroDay.hora}</p>` : ''}
       </div>` : ''}
-    </main>
-  </div>`;
+    `;
 
-  $('#logout').onclick = ()=>{ State.currentUser=null; render('role'); };
-  $('#historyBtn').onclick = ()=>{ renderGirlHistory(); };
-  const sealBtn = $('#sealBtn');
-  if(sealBtn){
-    sealBtn.onclick = ()=> $('#fileInput').click();
-    $('#fileInput').onchange = async (e)=>{
-      const files = Array.from(e.target.files).slice(0,5); if(!files.length) return;
-      sealBtn.querySelector('.cap').textContent = 'Guardando...';
-      const fotos = [];
-      for(const f of files){ fotos.push(await compressImage(f, 700, 0.6)); }
-      const registro = { estado:'M', fotos, hora: new Date().toISOString() };
-      await sSet(regKey, registro);
-      const newStats = await computeAndSaveStats(user.id, today);
-      toast(`¡Evidencia ${registroHoy ? 'actualizada' : 'registrada'}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
-      renderGirlHome();
-    };
-  }
-}
+    // Event listeners para botones de día
+    document.querySelectorAll('.day-btn').forEach(btn=>{
+      btn.onclick = ()=>loadDay(btn.dataset.date);
+    });
 
-function openImageViewer(imageSrc){
-  const overlay = document.createElement('div');
-  overlay.className = 'image-viewer-overlay';
-  
-  let scale = 1;
-  let offsetX = 0;
-  let offsetY = 0;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  
-  overlay.innerHTML = `
-    <button class="image-viewer-close">✕</button>
-    <div class="image-viewer-container">
-      <img class="image-viewer-img" src="${imageSrc}" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
-      <div class="image-viewer-controls">
-        <button class="image-viewer-btn" id="zoomOut">🔍−</button>
-        <button class="image-viewer-btn" id="zoomIn">🔍+</button>
-        <button class="image-viewer-btn" id="downloadBtn">📥 Descargar</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(overlay);
-  
-  const img = overlay.querySelector('.image-viewer-img');
-  const container = overlay.querySelector('.image-viewer-container');
-  
-  // Zoom
-  overlay.querySelector('#zoomIn').onclick = ()=>{
-    scale = Math.min(scale + 0.2, 3);
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  overlay.querySelector('#zoomOut').onclick = ()=>{
-    scale = Math.max(scale - 0.2, 1);
-    offsetX = 0; offsetY = 0;
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  // Download
-  overlay.querySelector('#downloadBtn').onclick = ()=>{
-    const link = document.createElement('a');
-    link.href = imageSrc;
-    link.download = 'evidencia_' + new Date().getTime() + '.jpg';
-    link.click();
-  };
-  
-  // Drag to move
-  img.onmousedown = (e)=>{
-    if(scale === 1) return;
-    isDragging = true;
-    dragStartX = e.clientX - offsetX;
-    dragStartY = e.clientY - offsetY;
-    img.classList.add('dragging');
-  };
-  
-  document.onmousemove = (e)=>{
-    if(!isDragging) return;
-    offsetX = e.clientX - dragStartX;
-    offsetY = e.clientY - dragStartY;
-    img.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
-  };
-  
-  document.onmouseup = ()=>{
-    isDragging = false;
-    img.classList.remove('dragging');
-  };
-  
-  // Close
-  overlay.querySelector('.image-viewer-close').onclick = ()=> overlay.remove();
-  overlay.onclick = (e)=>{ if(e.target === overlay) overlay.remove(); };
-}
-
-function renderEvidenceGallery(reg){
-  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
-  if(!fotos.length) return '';
-  const soloClass = fotos.length===1 ? 'solo' : '';
-  return `<div class="thumb-grid">${fotos.map(f=>`<img class="${soloClass}" src="${f}" onclick="openImageViewer('${f}')" style="cursor:pointer;transition:.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">`).join('')}</div>`;
-}
-
-function compressImage(file, maxW=800, quality=0.65){
-  return new Promise((resolve)=>{
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      const img = new Image();
-      img.onload = ()=>{
-        const scale = Math.min(1, maxW/img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width*scale; canvas.height = img.height*scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+    // Event listener para subir evidencia
+    const sealBtn = document.getElementById('sealBtn');
+    if(sealBtn){
+      const fileInputId = 'fileInputDay'+dateStr.replace(/-/g,'');
+      const fileInput = document.getElementById(fileInputId);
+      
+      sealBtn.onclick = ()=>fileInput.click();
+      
+      fileInput.onchange = async (e)=>{
+        const files = Array.from(e.target.files).slice(0,5);
+        if(!files.length) return;
+        
+        sealBtn.querySelector('.cap').textContent = 'Guardando...';
+        const fotos = [];
+        
+        for(const f of files){
+          fotos.push(await compressImage(f, 700, 0.6));
+        }
+        
+        const registro = { estado:'M', fotos, hora: new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'}) };
+        const regKey = 'registro:'+dateStr+':'+user.id;
+        await sSet(regKey, registro);
+        
+        // Actualizar stats del mes
+        const mkey = monthKey(dateStr);
+        const monthStats = (await sGet('statsmonth:'+user.id+':'+mkey)) || { totalM:0 };
+        const prevReg = registroDay;
+        if(!prevReg || !prevReg.fotos || prevReg.fotos.length === 0){
+          monthStats.totalM = (monthStats.totalM || 0) + 1;
+          await sSet('statsmonth:'+user.id+':'+mkey, monthStats);
+        }
+        
+        // Actualizar racha
+        await recordStreak(user.id, dateStr);
+        
+        toast(`✅ Evidencia guardada para ${fmtDateShort(dateStr)}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
+        loadDay(dateStr);
       };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
+    }
+  }
 
+  await loadDay(selectedDate);
+
+  const topbar = document.querySelector('.topbar');
+  if(!topbar){
+    const screen = document.querySelector('.screen');
+    if(screen){
+      screen.innerHTML = `
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
+          <button class="icon-btn" id="logout">Salir</button>
+        </div>
+      </div>
+      <main></main>` + screen.innerHTML;
+    }
+  }
+
+  document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
+  document.getElementById('logout').onclick = ()=>{
+    State.currentUser = null;
+    sessionStorage.removeItem('selectedDate');
+    render('role');
+  };
+}
 async function computeAndSaveStats(userId, dateStr){
   const prevStreak = (await sGet('streak:'+userId)) || { racha:0, ultimaFecha:null };
   let racha = prevStreak.racha || 0;
@@ -932,8 +904,13 @@ async function computeAndSaveStats(userId, dateStr){
 function celebrateStreak(days){
   playSound();
   createConfetti();
-  const messages = {7: '¡Una semana! 🔥', 14: '¡Dos semanas! 🌟', 21: '¡Tres semanas! ✨', 30: '¡Un mes entero! 👑'};
-  const msg = messages[days] || '¡Lo lograste!';
+  const messages = {
+    7: '¡Tú puedes! 🔥 Lo estás haciendo bien. Una semana completa de devocional.',
+    14: '¡Qué increíble eres! 🌟 Dos semanas de compromiso. Dios ve tu consistencia.',
+    21: '¡Eres una guerrera! ✨ Tres semanas dedicadas. Tu fe crece cada día.',
+    30: '¡ERES INCREÍBLE! 👑 Un mes entero. Que orgullo de ti. Sigue adelante.'
+  };
+  const msg = messages[days] || '¡Lo lograste! Sigue así.';
   toast(msg);
 }
 
