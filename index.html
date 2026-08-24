@@ -495,12 +495,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  // checkForUpdate(); // DESACTIVADO ESTA SEMANA - Se activa el sábado 18
-  // setInterval(checkForUpdate, 5*60*1000);
+  checkForUpdate(); // ACTIVO - Verifica actualizaciones
+  setInterval(checkForUpdate, 5*60*1000); // Revisa cada 5 minutos
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-ayer-hoy";
+const APP_VERSION = "2026-08-24-update-active";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -696,6 +696,27 @@ async function renderGirlHistory(){
 }
 
 
+
+/* Comprimir imágenes para ahorrar ancho de banda */
+function compressImage(file, maxW=800, quality=0.65){
+  return new Promise((resolve)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const scale = Math.min(1, maxW/img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width*scale; canvas.height = img.height*scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 async function renderGirlHome(){
   const today = todayStr();
   const yesterday = addDaysToStr(today, -1);
@@ -725,7 +746,7 @@ async function renderGirlHome(){
     <div class="topbar">
       <div class="brand">
         <div class="brand-mark"></div>
-        <div class="brand-text">\${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
+        <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="icon-btn" id="historyBtn" style="font-size:18px;padding:6px 10px;">📖</button>
@@ -735,20 +756,20 @@ async function renderGirlHome(){
     <main>
       <!-- BOTONES AYER/HOY -->
       <div style="display:flex;gap:8px;margin:16px 0;justify-content:center;">
-        <button class="day-btn" data-day="${yesterday}" style="padding:10px 20px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;color:var(--ink);transition:.2s;\${selectedDate === yesterday ? 'border-color:var(--primary-dark);color:var(--primary-dark);background:var(--gold-soft);' : ''}" id="btnAyer">
-          Ayer<br><small style="font-size:11px;font-weight:400;">\${fmtDateLong(yesterday).split('de')[1].trim().split('de')[0]}</small>
+        <button class="day-btn" data-day="${yesterday}" style="padding:10px 20px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;color:var(--ink);transition:.2s;${selectedDate === yesterday ? 'border-color:var(--primary-dark);color:var(--primary-dark);background:var(--gold-soft);' : ''}" id="btnAyer">
+          Ayer<br><small style="font-size:11px;font-weight:400;">${fmtDateLong(yesterday).split('de')[1].trim().split('de')[0]}</small>
         </button>
-        <button class="day-btn" data-day="${today}" style="padding:10px 20px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;color:var(--ink);transition:.2s;\${selectedDate === today ? 'border-color:var(--primary-dark);color:var(--primary-dark);background:var(--gold-soft);' : ''}" id="btnHoy">
-          Hoy<br><small style="font-size:11px;font-weight:400;">\${fmtDateLong(today).split('de')[1].trim().split('de')[0]}</small>
+        <button class="day-btn" data-day="${today}" style="padding:10px 20px;border:2px solid var(--line);border-radius:8px;background:white;cursor:pointer;font-weight:600;color:var(--ink);transition:.2s;${selectedDate === today ? 'border-color:var(--primary-dark);color:var(--primary-dark);background:var(--gold-soft);' : ''}" id="btnHoy">
+          Hoy<br><small style="font-size:11px;font-weight:400;">${fmtDateLong(today).split('de')[1].trim().split('de')[0]}</small>
         </button>
       </div>
       
-      <span class="date-chip">\${fmtDateLong(selectedDate)}</span>
+      <span class="date-chip">${fmtDateLong(selectedDate)}</span>
       
-      \${devo ? \`
+      ${devo ? \`
       <div class="devo-card">
-        \${devo.imagen ? \`<img class="devo-img" src="\${devo.imagen}">\` : ''}
-        <p class="devo-text">\${devo.texto || ''}</p>
+        ${devo.imagen ? \`<img class="devo-img" src="${devo.imagen}">\` : ''}
+        <p class="devo-text">${devo.texto || ''}</p>
       </div>\` : \`
       <div class="card empty-devo">
         <div class="glyph">🕊️</div>
@@ -756,24 +777,24 @@ async function renderGirlHome(){
       </div>\`}
 
       <div class="streak-row">
-        <div class="stat-pill"><div class="num">\${stats.racha}🔥</div><div class="lbl">Racha</div></div>
-        <div class="stat-pill"><div class="num">\${stats.totalM}</div><div class="lbl">Días este mes</div></div>
+        <div class="stat-pill"><div class="num">${stats.racha}🔥</div><div class="lbl">Racha</div></div>
+        <div class="stat-pill"><div class="num">${stats.totalM}</div><div class="lbl">Días este mes</div></div>
       </div>
 
-      <div style="background:\${deadlineColor}20;border:1.5px solid \${deadlineColor};border-radius:12px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:20px;">\${deadlineIcon}</span>
+      <div style="background:${deadlineColor}20;border:1.5px solid ${deadlineColor};border-radius:12px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">${deadlineIcon}</span>
         <div>
-          <p style="margin:0;font-weight:600;color:\${deadlineColor};font-size:14px;">Plazo: \${fmtDateLong(deadline)}</p>
-          <p style="margin:2px 0;font-size:12px;color:\${deadlineColor}80;">\${daysUntilDeadline > 1 ? \`Faltan \${daysUntilDeadline} días\` : daysUntilDeadline === 1 ? 'Último día ⚠️' : 'Plazo vencido'}</p>
+          <p style="margin:0;font-weight:600;color:${deadlineColor};font-size:14px;">Plazo: ${fmtDateLong(deadline)}</p>
+          <p style="margin:2px 0;font-size:12px;color:${deadlineColor}80;">${daysUntilDeadline > 1 ? \`Faltan ${daysUntilDeadline} días\` : daysUntilDeadline === 1 ? 'Último día ⚠️' : 'Plazo vencido'}</p>
         </div>
       </div>
 
-      <button class="seal \${registroSelected?'done':''}" id="sealBtn">
-        <span class="glyph">\${registroSelected?'✏️':'📷'}</span>
-        <span class="cap">\${registroSelected?'Editar evidencia':'Subir evidencia'}</span>
+      <button class="seal ${registroSelected?'done':''}" id="sealBtn">
+        <span class="glyph">${registroSelected?'✏️':'📷'}</span>
+        <span class="cap">${registroSelected?'Editar evidencia':'Subir evidencia'}</span>
       </button>
-      <p class="seal-hint">\${registroSelected? '¿Quieres cambiar tus fotos? Toca Editar' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
-      \${registroSelected ? renderEvidenceGallery(registroSelected) : ''}
+      <p class="seal-hint">${registroSelected? '¿Quieres cambiar tus fotos? Toca Editar' : 'Toca para elegir hasta 5 fotos (cámara o galería)'}</p>
+      ${registroSelected ? renderEvidenceGallery(registroSelected) : ''}
     </main>
   </div>\`;
 
@@ -825,7 +846,7 @@ async function renderGirlHome(){
       });
       
       await computeAndSaveStats(State.currentUser.id, selectedDate);
-      toast(\`¡Evidencia \${registroSelected ? 'actualizada' : 'registrada'}! 🌸 (\${fotos.length} foto\${fotos.length>1?'s':''})\`);
+      toast(\`¡Evidencia ${registroSelected ? 'actualizada' : 'registrada'}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})\`);
       renderGirlHome();
     } catch(err){
       console.error('Error:', err);
