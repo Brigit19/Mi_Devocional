@@ -894,7 +894,7 @@ async function renderGirlHome(){
     if(!mainContent) return;
     
     mainContent.innerHTML = `
-      <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:4px 0;align-items:center;">
+      <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:4px 0;">
         ${[1,0].map(daysAgo=>{
           const d = addDaysToStr(today, -daysAgo);
           const isSelected = d === selectedDate;
@@ -950,9 +950,7 @@ async function renderGirlHome(){
 
     // Event listener para botón Salir
     const logoutBtn = document.getElementById('logoutGirl');
-    if(logoutBtn){
-      logoutBtn.onclick = ()=>{ State.currentUser = null; render('role'); };
-    }
+    if(logoutBtn) logoutBtn.onclick = () => { State.currentUser = null; render('role'); };
 
     // Event listener para subir evidencia
     const sealBtn = document.getElementById('sealBtn');
@@ -989,8 +987,8 @@ async function renderGirlHome(){
         // Actualizar racha
         await recordStreak(user.id, dateStr);
         
-        sealBtn.querySelector('.cap').textContent = 'Devocional subido ✅';
         toast(`✅ Evidencia guardada para ${fmtDateShort(dateStr)}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
+        sealBtn.querySelector('.cap').textContent = 'Devocional subido ✅';
         loadDay(dateStr);
       };
     }
