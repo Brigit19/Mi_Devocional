@@ -6,23 +6,23 @@
   "scope": "/Mi_Devocional/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#93547A",
-  "background_color": "#FFFFFF",
+  "theme_color": "#8B5A8D",
+  "background_color": "#F8E8F0",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23FFFFFF' width='192' height='192'/><circle cx='96' cy='96' r='80' fill='%2393547A'/><text x='96' y='140' font-size='100' fill='%23FFFFFF' text-anchor='middle' font-family='Arial' font-weight='bold'>🌷</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23F8E8F0' width='192' height='192'/><circle cx='96' cy='96' r='80' fill='%238B5A8D'/><text x='96' y='140' font-size='100' fill='white' text-anchor='middle'>🌷</text></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23FFFFFF' width='512' height='512'/><circle cx='256' cy='256' r='200' fill='%2393547A'/><text x='256' y='350' font-size='280' fill='%23FFFFFF' text-anchor='middle' font-family='Arial' font-weight='bold'>🌷</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23F8E8F0' width='512' height='512'/><circle cx='256' cy='256' r='200' fill='%238B5A8D'/><text x='256' y='350' font-size='280' fill='white' text-anchor='middle'>🌷</text></svg>",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%2393547A' width='192' height='192'/><text x='96' y='140' font-size='100' fill='%23FFFFFF' text-anchor='middle' font-family='Arial' font-weight='bold'>🌷</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%238B5A8D' width='192' height='192'/><text x='96' y='140' font-size='100' fill='white' text-anchor='middle'>🌷</text></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "maskable"
@@ -31,7 +31,7 @@
   "categories": ["lifestyle", "productivity"],
   "screenshots": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23FFFFFF' width='540' height='720'/><rect fill='%2393547A' width='540' height='100'/><text x='270' y='60' font-size='30' fill='white' text-anchor='middle' font-family='Arial' font-weight='bold'>Mi Devocional</text><text x='270' y='300' font-size='60' fill='%2393547A' text-anchor='middle' font-family='Arial'>🌷</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23F8E8F0' width='540' height='720'/><rect fill='%238B5A8D' width='540' height='100'/><text x='270' y='60' font-size='30' fill='white' text-anchor='middle'>Mi Devocional</text><text x='270' y='300' font-size='60' fill='%238B5A8D' text-anchor='middle'>🌷</text></svg>",
       "sizes": "540x720",
       "type": "image/svg+xml",
       "form_factor": "narrow"

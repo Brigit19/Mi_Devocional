@@ -1,4 +1,4 @@
-const CACHE_NAME = 'midevocional-v2026-08-24';
+const CACHE_NAME = 'midevocional-v2026-08-24-final';
 
 self.addEventListener('install', (event) => {
   console.log('🔧 Service Worker instalando...');
@@ -9,10 +9,7 @@ self.addEventListener('install', (event) => {
         '/Mi_Devocional/',
         '/Mi_Devocional/index.html',
         '/Mi_Devocional/manifest.json'
-      ]).catch(err => {
-        console.log('Nota: algunos archivos no están disponibles yet');
-        return Promise.resolve();
-      });
+      ]).catch(() => Promise.resolve());
     })
   );
   self.skipWaiting();
@@ -42,9 +39,7 @@ self.addEventListener('fetch', (event) => {
       if (response) return response;
       
       return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type === 'error') {
-          return response;
-        }
+        if (!response || response.status !== 200) return response;
         
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
@@ -53,10 +48,8 @@ self.addEventListener('fetch', (event) => {
         
         return response;
       }).catch(() => {
-        return caches.match(event.request);
+        return caches.match('/Mi_Devocional/index.html');
       });
     })
   );
 });
-
-console.log('✅ Service Worker registrado');
