@@ -1315,6 +1315,22 @@ async function renderTabDevocionales(){
       ${editable ? `
       <label>Imagen del devocional</label>
       <button class="btn btn-ghost" id="pickImg" style="width:100%;">${devo.imagen? 'Cambiar imagen' : 'Seleccionar imagen'}</button>
+<!-- BOTÓN ALTERNATIVO DE EMERGENCIA -->
+<button class="btn btn-success" id="pickImgEmergency" style="width:100%;margin-top:8px;background:#5E9A78;">
+  🚀 Subir imagen RÁPIDO
+</button>
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btnEmergency = document.getElementById('pickImgEmergency');
+  if(btnEmergency){
+    btnEmergency.onclick = ()=>{
+      const fileInput = document.getElementById('dImgInput');
+      if(fileInput) fileInput.click();
+    };
+  }
+});
+</script>
+
       <input type="file" id="dImgInput" accept="image/*" style="display:none;">
       <label>Mensaje motivacional</label>
       <textarea id="dTexto" placeholder="Escribe el mensaje motivacional de hoy...">${devo.texto||''}</textarea>
@@ -1339,14 +1355,50 @@ async function renderTabDevocionales(){
   });
   
   if(editable){
-    $('#pickImg').onclick = ()=> $('#dImgInput').click();
-    $('#dImgInput').onchange = async (e)=>{
-      const file = e.target.files[0]; if(!file) return;
-      $('#pickImg').textContent = 'Procesando imagen...';
-      pendingImg = await compressImage(file, 1024, 0.8);
-      $('#pickImg').textContent = 'Cambiar imagen';
-      toast('Imagen lista, no olvides publicar');
+    
+// SOLUCIÓN DE EMERGENCIA - SUBIDA DIRECTA
+$('#pickImg').onclick = async () => {
+  const fileInput = $('#dImgInput');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    toast('Selecciona una imagen');
+    return;
+  }
+  
+  $('#pickImg').textContent = '⏳ Procesando...';
+  $('#pickImg').disabled = true;
+  
+  try {
+    // Solución rápida: convertir directamente sin compresión compleja
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        pendingImg = event.target.result;
+        $('#pickImg').textContent = '✅ Imagen lista';
+        $('#pickImg').style.background = 'linear-gradient(135deg, #6ba988, #5E9A78)';
+        toast('✅ ¡Imagen cargada! Presiona "Publicar"');
+        $('#pickImg').disabled = false;
+      } catch (err) {
+        toast('Error: ' + err.message);
+        $('#pickImg').textContent = 'Seleccionar imagen';
+        $('#pickImg').disabled = false;
+      }
     };
+    reader.onerror = () => {
+      toast('Error al leer la imagen');
+      $('#pickImg').textContent = 'Seleccionar imagen';
+      $('#pickImg').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  } catch (error) {
+    console.error('Error:', error);
+    toast('Error: ' + error.message);
+    $('#pickImg').textContent = 'Seleccionar imagen';
+    $('#pickImg').disabled = false;
+  }
+};
+
     $('#saveDevo').onclick = async ()=>{
       const texto = $('#dTexto').value.trim();
       if(!pendingImg && !texto){ toast('Agrega la imagen o el mensaje del día'); return; }
@@ -1508,5 +1560,37 @@ async function openGirlModal(id, dateStr){
 
 init();
 </script>
-</body>
+<script>
+// Manejador DIRECTO y SIMPLE para dImgInput
+document.addEventListener('DOMContentLoaded', ()=>{
+  const dImgInput = document.getElementById('dImgInput');
+  const pickImg = document.getElementById('pickImg');
+  
+  if(dImgInput && pickImg){
+    dImgInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      
+      pickImg.textContent = '⏳ Cargando...';
+      pickImg.disabled = true;
+      
+      try {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          pendingImg = event.target.result;
+          pickImg.textContent = '✅ Imagen lista';
+          pickImg.style.background = 'linear-gradient(135deg, #6ba988, #5E9A78)';
+          toast('✅ ¡Imagen lista! Presiona "Publicar"');
+        };
+        reader.readAsDataURL(file);
+      } catch(err) {
+        toast('Error: ' + err.message);
+        pickImg.textContent = 'Seleccionar imagen';
+      } finally {
+        pickImg.disabled = false;
+      }
+    };
+  }
+});
+</script></body>
 </html>
