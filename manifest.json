@@ -1,40 +1,23 @@
 {
-  "name": "Mi Devocional - Casa Apostólica Belén",
+  "name": "Mi Devocional",
   "short_name": "Mi Devocional",
-  "description": "App para seguimiento de devocionales del ministerio juvenil",
+  "description": "Cuaderno Devocional - Casa Apostólica Belén",
   "start_url": "/Mi_Devocional/",
-  "scope": "/Mi_Devocional/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "theme_color": "#8B5A8D",
   "background_color": "#F8E8F0",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23F8E8F0' width='192' height='192'/><circle cx='96' cy='96' r='80' fill='%238B5A8D'/><text x='96' y='140' font-size='100' fill='white' text-anchor='middle'>🌷</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23FFFFFF' width='192' height='192' rx='40'/><g transform='translate(96,96)'><path d='M -40 -50 L -40 50 Q 0 60 40 50 L 40 -50 Q 0 -60 -40 -50' fill='%238B5A8D' stroke='%23D89BB8' stroke-width='2'/><path d='M -35 -40 L -35 40' stroke='%23D89BB8' stroke-width='1.5' opacity='0.6'/><line x1='-30' y1='-35' x2='35' y2='-35' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-25' x2='35' y2='-25' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-15' x2='35' y2='-15' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='-5' x2='35' y2='-5' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='5' x2='35' y2='5' stroke='%23F5E6D3' stroke-width='1.5'/><line x1='-30' y1='15' x2='35' y2='15' stroke='%23F5E6D3' stroke-width='1.5'/><text x='-15' y='-50' font-size='24' fill='%23D89BB8'>🌷</text></g></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23F8E8F0' width='512' height='512'/><circle cx='256' cy='256' r='200' fill='%238B5A8D'/><text x='256' y='350' font-size='280' fill='white' text-anchor='middle'>🌷</text></svg>",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%238B5A8D' width='192' height='192'/><text x='96' y='140' font-size='100' fill='white' text-anchor='middle'>🌷</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%238B5A8D' width='192' height='192' rx='40'/><g transform='translate(96,96)'><path d='M -40 -50 L -40 50 Q 0 60 40 50 L 40 -50 Q 0 -60 -40 -50' fill='%23D89BB8'/><text x='-15' y='-50' font-size='24' fill='white'>🌷</text></g></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "maskable"
-    }
-  ],
-  "categories": ["lifestyle", "productivity"],
-  "screenshots": [
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23F8E8F0' width='540' height='720'/><rect fill='%238B5A8D' width='540' height='100'/><text x='270' y='60' font-size='30' fill='white' text-anchor='middle'>Mi Devocional</text><text x='270' y='300' font-size='60' fill='%238B5A8D' text-anchor='middle'>🌷</text></svg>",
-      "sizes": "540x720",
-      "type": "image/svg+xml",
-      "form_factor": "narrow"
     }
   ]
 }
