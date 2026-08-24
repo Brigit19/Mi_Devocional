@@ -504,7 +504,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-cambiar-pin";
+const APP_VERSION = "2026-08-24-panel-lider-fix";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -534,14 +534,14 @@ function showUpdateBanner(newVersion){
 }
 
 /* ================= RENDER ROUTER ================= */
-function render(screen, opts={}){
+async function render(screen, opts={}){
   State.screen = screen;
   appEl.classList.toggle('wide', screen==='leaderHome');
   if(screen==='role') return renderRole();
   if(screen==='girlLogin') return renderGirlLogin();
-  if(screen==='girlHome') return renderGirlHome();
+  if(screen==='girlHome') return await renderGirlHome();
   if(screen==='leaderLogin') return renderLeaderLogin();
-  if(screen==='leaderHome') return renderLeaderHome();
+  if(screen==='leaderHome') return await renderLeaderHome();
 }
 
 /* ================= ROLE SELECT ================= */
@@ -603,12 +603,12 @@ function renderGirlLogin(){
     </div>
   </div>`;
   $('#back').onclick = ()=>render('role');
-  $('#enter').onclick = ()=>{
+  $('#enter').onclick = async ()=>{
     const id = $('#selName').value; const pin = $('#pin').value.trim();
     const user = State.names.find(n=>n.id===id);
     if(!user || pin !== user.pin){ $('#err').style.display='block'; return; }
     State.currentUser = user;
-    render('girlHome');
+    await render('girlHome');
   };
 }
 
@@ -1027,10 +1027,10 @@ function renderLeaderLogin(){
     </div>
   </div>`;
   $('#back').onclick = ()=>render('role');
-  $('#enter').onclick = ()=>{
+  $('#enter').onclick = async ()=>{
     if($('#pin').value.trim() !== State.config.leaderPin){ $('#err').style.display='block'; return; }
     State.leaderAuthed = true;
-    render('leaderHome');
+    await render('leaderHome');
   };
 }
 
@@ -1054,20 +1054,20 @@ async function renderLeaderHome(){
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
   document.querySelectorAll('.tab').forEach(t=>{
-    t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
+    t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab().catch(e=>console.error('Error:', e)); };
   });
   paintTabs();
-  renderTab();
+  await renderTab();
 }
 function paintTabs(){
   document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.t===State.tab));
 }
-function renderTab(){
-  if(State.tab==='hoy') return renderTabHoy();
-  if(State.tab==='resumen') return renderTabResumen();
-  if(State.tab==='devocionales') return renderTabDevocionales();
-  if(State.tab==='senoritas') return renderTabSenoritas();
-  if(State.tab==='config') return renderTabConfig();
+async function renderTab(){
+  if(State.tab==='hoy') return await renderTabHoy();
+  if(State.tab==='resumen') return await renderTabResumen();
+  if(State.tab==='devocionales') return await renderTabDevocionales();
+  if(State.tab==='senoritas') return await renderTabSenoritas();
+  if(State.tab==='config') return await renderTabConfig();
 }
 
 /* --- TAB: HOY --- */
