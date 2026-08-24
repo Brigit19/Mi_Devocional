@@ -392,15 +392,36 @@ function slugId(name, idx){
 
 async function ensureSeed(){
   let names = await sGet('nombres');
-  if(!names){
-    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000' }));
-    await sSet('nombres', names);
+  if(!names || !Array.isArray(names) || names.length === 0){
+    console.log('📝 Creando lista de nombres desde DEFAULT_NAMES...');
+    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
+    try{
+      await sSet('nombres', names);
+      console.log('✅ Nombres guardados en Firebase');
+    }catch(e){
+      console.error('❌ Error guardando nombres:', e);
+    }
   }
+  
   let config = await sGet('config');
   if(!config){
+    console.log('📝 Creando configuración por defecto...');
     config = { leaderPin: '1234' };
-    await sSet('config', config);
+    try{
+      await sSet('config', config);
+      console.log('✅ Configuración guardada en Firebase');
+    }catch(e){
+      console.error('❌ Error guardando configuración:', e);
+    }
   }
+  
+  // Validación final
+  if(!names){
+    console.error('🚨 CRÍTICO: names sigue siendo null/undefined, usando DEFAULT_NAMES');
+    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000', activa: true }));
+  }
+  
+  console.log('✅ ensureSeed() completado. Nombres:', names.length);
   return { names, config };
 }
 
@@ -504,7 +525,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-panel-lider-fix";
+const APP_VERSION = "2026-08-24-debug-tabs";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1063,17 +1084,39 @@ function paintTabs(){
   document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.t===State.tab));
 }
 async function renderTab(){
-  if(State.tab==='hoy') return await renderTabHoy();
-  if(State.tab==='resumen') return await renderTabResumen();
-  if(State.tab==='devocionales') return await renderTabDevocionales();
-  if(State.tab==='senoritas') return await renderTabSenoritas();
-  if(State.tab==='config') return await renderTabConfig();
+  try{
+    console.log('🔄 Renderizando tab:', State.tab);
+    if(State.tab==='hoy') return await renderTabHoy();
+    if(State.tab==='resumen') return await renderTabResumen();
+    if(State.tab==='devocionales') return await renderTabDevocionales();
+    if(State.tab==='senoritas') return await renderTabSenoritas();
+    if(State.tab==='config') return await renderTabConfig();
+  }catch(err){
+    console.error('❌ Error en renderTab:', err);
+    const body = document.getElementById('tabBody');
+    if(body){
+      body.innerHTML = `<div style="text-align:center;padding:30px;color:var(--danger);">
+        ⚠️ Error: No se pudo cargar el contenido<br>
+        <small>${err.message}</small>
+      </div>`;
+    }
+  }
 }
 
 /* --- TAB: HOY --- */
 async function renderTabHoy(){
   const body = $('#tabBody');
+  if(!body){
+    console.error('❌ #tabBody no encontrado');
+    return;
+  }
   body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Cargando...</div>';
+  
+  if(!State.names || State.names.length === 0){
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">⚠️ Error: No hay señoritas cargadas</div>';
+    return;
+  }
+  
   const today = todayStr();
   const keys = await sList('registro:'+today+':');
   const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
@@ -1124,7 +1167,17 @@ function rosterRowHTML(n, has, mode, pct){
 /* --- TAB: RESUMEN --- */
 async function renderTabResumen(){
   const body = $('#tabBody');
+  if(!body){
+    console.error('❌ #tabBody no encontrado');
+    return;
+  }
   body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-soft);">Calculando avance...</div>';
+  
+  if(!State.names || State.names.length === 0){
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">⚠️ Error: No hay señoritas cargadas</div>';
+    return;
+  }
+  
   const today = new Date();
   const dim = daysInMonth(today.getFullYear(), today.getMonth()+1);
   const mKey = monthKey(todayStr());
