@@ -367,14 +367,23 @@ async function sList(prefix){
 
 /* ================= DEFAULT ROSTER ================= */
 const DEFAULT_NAMES = [
-"Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay",
-"Lady Berrospi","María Angela Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco",
-"Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorlene Collazos Castro","Isabel Nancy Luna Vásquez",
-"Katherine Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco",
-"Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeón","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari",
-"Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Carhuallanqui Obregón","Rachell Sulca",
-"Maria Fernanda Tinoco Palacios","Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha",
-"Lucero Isidro Castro","Alcira Sánchez Quispe"
+"Arianna Nicolle Rojas Camasca","Danitza Belen Cordero Mercado","Estefany Collazos","Juana Huayanay Loayza",
+
+"Lady Berrospi","María Angela Vasquez Nolasco","Marjorie Villalba Salazar","Marisol Justiniano Tinoco",
+
+"Marlú Milagros Escobar Salazar","Sarai Tania Palomino","Yorleni Collazos Castro","Isabel Nancy Luna Vasquez",
+
+"Katherin Yocelinda Meza Alanya","Camila Rubino","Erika Minaya Tolentino","Belen Porras Blanco",
+
+"Vania Noemi Canchanya Tinoco","Yamile Mireya Inga Baldeon","Nayra Stefania Gutierrez Flores","Heidy Rojas Ahuanari",
+
+"Zayuri Esteban Laura","Thania Alegre Castillo","Pamela Ines Carhuallanqui Obregón","Maria Fernanda Tinoco Palacios",
+
+"Valery Zulay Ipurre Escalera","Ruth Keren Ramos Mayta","Anny Karen Sotacuro Quicha","Lucero Isidro Castro",
+
+"Alcira Sanchez Quispe","Andrea Jasmin Flores Santamaria","Iyari Lazaro","Marilyn Rosa Huayanay Torres",
+
+"Very Luz Condezo Baltazar","Anahi Anette Alvarez Collahuacho","Laura Sanchez Quispe","Nicole Huaranga Reyes"
 ];
 
 function slugId(name, idx){
@@ -495,7 +504,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-ayer-hoy-funcional";
+const APP_VERSION = "2026-08-24-cambiar-pin";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1039,6 +1048,7 @@ async function renderLeaderHome(){
         <div class="tab" data-t="resumen">Resumen</div>
         <div class="tab" data-t="devocionales">Devocionales</div>
         <div class="tab" data-t="senoritas">Señoritas</div>
+        <div class="tab" data-t="config">⚙️ Configuración</div>
       </div>
       <div id="tabBody"></div>
   </div>`;
@@ -1057,6 +1067,7 @@ function renderTab(){
   if(State.tab==='resumen') return renderTabResumen();
   if(State.tab==='devocionales') return renderTabDevocionales();
   if(State.tab==='senoritas') return renderTabSenoritas();
+  if(State.tab==='config') return renderTabConfig();
 }
 
 /* --- TAB: HOY --- */
@@ -1315,6 +1326,112 @@ async function renderTabSenoritas(){
       renderTabSenoritas();
     };
   });
+}
+
+
+/* --- TAB: CONFIGURACIÓN --- */
+async function renderTabConfig(){
+  const body = $('#tabBody');
+  body.innerHTML = `
+    <div class="section-title"><div><h2>⚙️ Configuración</h2><p>Gestiona la configuración de la app</p></div></div>
+    
+    <div class="card" style="margin:16px 0;padding:16px;background:linear-gradient(135deg, #f5e6f0, white);border:2px solid var(--fuchsia);">
+      <h3 style="margin-top:0;color:var(--primary-dark);">🔐 Cambiar tu PIN de acceso</h3>
+      <p style="color:var(--ink-soft);font-size:13px;">Ingresa el PIN actual y elige uno nuevo para tu acceso como líder</p>
+      
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">🔓 PIN actual (el que usas ahora):</label>
+        <input type="password" id="currentPin" placeholder="Ej: 1234" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Verifica que sea correcto</p>
+      </div>
+      
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">✨ Nuevo PIN (que TÚ ELIJAS):</label>
+        <input type="password" id="newPin" placeholder="Ej: 5678" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Debe tener 4 dígitos numéricos</p>
+      </div>
+      
+      <div style="margin:16px 0;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--primary-dark);">🔐 Confirma tu nuevo PIN:</label>
+        <input type="password" id="confirmPin" placeholder="Repite: 5678" maxlength="4" style="width:100%;padding:12px;border:2px solid var(--line);border-radius:8px;font-size:14px;font-weight:bold;text-align:center;letter-spacing:2px;">
+        <p style="font-size:11px;color:var(--ink-soft);margin:4px 0;">Repite exactamente el mismo PIN</p>
+      </div>
+      
+      <button id="changePinBtn" class="btn btn-primary" style="width:100%;padding:14px;background:linear-gradient(135deg, var(--primary-dark), #a85f8f);border:none;border-radius:8px;color:white;font-weight:bold;font-size:15px;cursor:pointer;">Cambiar a mi nuevo PIN</button>
+      <div id="pinMessage" style="margin-top:12px;padding:12px;border-radius:8px;text-align:center;font-size:13px;display:none;font-weight:600;"></div>
+    </div>
+  `;
+  
+  document.getElementById('changePinBtn').onclick = async ()=>{
+    const currentPin = document.getElementById('currentPin').value;
+    const newPin = document.getElementById('newPin').value;
+    const confirmPin = document.getElementById('confirmPin').value;
+    const msgDiv = document.getElementById('pinMessage');
+    
+    // Validaciones
+    if(!currentPin || !newPin || !confirmPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '⚠️ Completa TODOS los campos, por favor';
+      return;
+    }
+    
+    if(currentPin !== State.config.leaderPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ El PIN actual es incorrecto. Verifica e intenta de nuevo';
+      return;
+    }
+    
+    if(newPin.length !== 4 || !newPin.match(/^\d{4}$/)){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ El nuevo PIN debe tener EXACTAMENTE 4 dígitos';
+      return;
+    }
+    
+    if(newPin !== confirmPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ Los dos PINs nuevos NO coinciden. Verifica e intenta de nuevo';
+      return;
+    }
+    
+    if(newPin === currentPin){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--gold)20';
+      msgDiv.style.color = 'var(--gold)';
+      msgDiv.textContent = '⚠️ El nuevo PIN es igual al actual. Elige uno diferente';
+      return;
+    }
+    
+    // Guardar nuevo PIN
+    try {
+      await sSet('config', { leaderPin: newPin });
+      State.config.leaderPin = newPin;
+      
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--success)20';
+      msgDiv.style.color = 'var(--success)';
+      msgDiv.textContent = '✅ ¡¡¡Tu PIN ha sido cambiado exitosamente!!! Ahora usa: ' + newPin;
+      
+      // Limpiar campos
+      setTimeout(()=>{
+        document.getElementById('currentPin').value = '';
+        document.getElementById('newPin').value = '';
+        document.getElementById('confirmPin').value = '';
+      }, 3000);
+    } catch(err){
+      msgDiv.style.display = 'block';
+      msgDiv.style.background = 'var(--danger)20';
+      msgDiv.style.color = 'var(--danger)';
+      msgDiv.textContent = '❌ Error al cambiar PIN. Intenta de nuevo';
+    }
+  };
 }
 
 /* --- MODAL: girl detail (leader) --- */
