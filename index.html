@@ -430,6 +430,31 @@ async function sList(prefix){
   }catch(e){ console.error('sList error', prefix, e); return []; }
 }
 
+async function recordStreak(userId, dateStr){
+  try{
+    const key = 'streak:'+userId;
+    const current = (await sGet(key)) || { racha: 0, ultimaFecha: null };
+    const today = todayStr();
+    const yesterday = addDaysToStr(today, -1);
+    
+    if(dateStr === today){
+      if(current.ultimaFecha === today){
+        // Ya subió hoy, no cambiar racha
+        return;
+      }else if(current.ultimaFecha === yesterday){
+        // Continuó la racha
+        current.racha = (current.racha || 0) + 1;
+      }else{
+        // Reiniciar racha
+        current.racha = 1;
+      }
+    }
+    
+    current.ultimaFecha = dateStr;
+    await sSet(key, current);
+  }catch(e){ console.error('recordStreak error', e); }
+}
+
 /* ================= DEFAULT ROSTER ================= */
 const DEFAULT_NAMES = [
     { id: "girl-000", nombre: "Arianna Nicolle Rojas Camasca", pin: "0000", activa: true },
@@ -895,10 +920,10 @@ async function renderGirlHome(){
     
     mainContent.innerHTML = `
       <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding:4px 0;">
-        ${[1,0].map(daysAgo=>{
+        ${[3,2,1,0].map(daysAgo=>{
           const d = addDaysToStr(today, -daysAgo);
           const isSelected = d === selectedDate;
-          return `<button class="day-btn ${isSelected?'active':''}" data-date="${d}" style="padding:8px 12px;border-radius:8px;border:2px solid ${isSelected?'var(--primary-dark)':'var(--line)'};background:${isSelected?'var(--primary-dark)20':'transparent'};color:var(--ink);cursor:pointer;font-size:12px;font-weight:${isSelected?'700':'500'};white-space:nowrap;">${d===today?'Hoy':d===addDaysToStr(today,-1)?'Ayer':'Hace 2 días'}<br><small style="opacity:0.6;">${fmtDateShort(d)}</small></button>`;
+          return `<button class="day-btn ${isSelected?'active':''}" data-date="${d}" style="padding:8px 12px;border-radius:8px;border:2px solid ${isSelected?'var(--primary-dark)':'var(--line)'};background:${isSelected?'var(--primary-dark)20':'transparent'};color:var(--ink);cursor:pointer;font-size:12px;font-weight:${isSelected?'700':'500'};white-space:nowrap;">${d===today?'Hoy':d===addDaysToStr(today,-1)?'Ayer':d===addDaysToStr(today,-2)?'Hace 2':'Hace 3'}<br><small style="opacity:0.6;">${fmtDateShort(d)}</small></button>`;
         }).join('')}
       </div>
 
