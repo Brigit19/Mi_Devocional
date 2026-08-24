@@ -497,7 +497,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-FORCE-UPDATE-0103";
+const APP_VERSION = "2026-08-24-CONFIG-TAB-CAMBIAR-PIN";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -954,6 +954,7 @@ async function renderLeaderHome(){
         <div class="tab" data-t="resumen">Resumen</div>
         <div class="tab" data-t="devocionales">Devocionales</div>
         <div class="tab" data-t="senoritas">Señoritas</div>
+        <div class="tab" data-t="config">⚙️ Configuración</div>
       </div>
       <div id="tabBody"></div>
     </main>
@@ -965,6 +966,97 @@ async function renderLeaderHome(){
   paintTabs();
   renderTab();
 }
+
+/* --- TAB: CONFIGURACIÓN --- */
+async function renderTabConfig(){
+  const body = $('#tabBody');
+  body.innerHTML = `
+    <div class="section-title"><h2>⚙️ Configuración</h2></div>
+    
+    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; margin: 16px 0;">
+      <h3 style="margin-top: 0; color: var(--primary-dark);">🔐 Cambiar PIN de Acceso</h3>
+      
+      <div style="margin: 12px 0;">
+        <label style="display: block; font-size: 14px; color: var(--ink-soft); margin-bottom: 6px;">PIN ACTUAL:</label>
+        <input id="currentPin" type="password" placeholder="Ingresa tu PIN actual" style="width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; box-sizing: border-box; font-size: 16px;">
+      </div>
+      
+      <div style="margin: 12px 0;">
+        <label style="display: block; font-size: 14px; color: var(--ink-soft); margin-bottom: 6px;">PIN NUEVO:</label>
+        <input id="newPin" type="password" placeholder="Ingresa el PIN nuevo (4 dígitos)" style="width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; box-sizing: border-box; font-size: 16px;">
+      </div>
+      
+      <div style="margin: 12px 0;">
+        <label style="display: block; font-size: 14px; color: var(--ink-soft); margin-bottom: 6px;">CONFIRMAR PIN NUEVO:</label>
+        <input id="confirmPin" type="password" placeholder="Confirma el PIN nuevo" style="width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; box-sizing: border-box; font-size: 16px;">
+      </div>
+      
+      <div id="configError" style="display: none; background: #fee; color: #c33; padding: 10px; border-radius: 6px; margin: 12px 0; font-size: 14px;"></div>
+      <div id="configSuccess" style="display: none; background: #efe; color: #3a3; padding: 10px; border-radius: 6px; margin: 12px 0; font-size: 14px;"></div>
+      
+      <button id="changePin" style="width: 100%; padding: 12px; background: var(--primary-dark); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 16px; margin-top: 12px;">
+        💾 Guardar PIN nuevo
+      </button>
+    </div>
+  `;
+  
+  $('#changePin').onclick = async ()=>{
+    const current = $('#currentPin').value.trim();
+    const newPin = $('#newPin').value.trim();
+    const confirm = $('#confirmPin').value.trim();
+    const errDiv = $('#configError');
+    const succDiv = $('#configSuccess');
+    
+    errDiv.style.display = 'none';
+    succDiv.style.display = 'none';
+    
+    // Validaciones
+    if(!current){
+      errDiv.textContent = '❌ Debes ingresar tu PIN actual';
+      errDiv.style.display = 'block';
+      return;
+    }
+    
+    if(current !== State.config.leaderPin){
+      errDiv.textContent = '❌ PIN actual incorrecto';
+      errDiv.style.display = 'block';
+      return;
+    }
+    
+    if(!newPin || newPin.length !== 4 || isNaN(newPin)){
+      errDiv.textContent = '❌ PIN nuevo debe tener 4 dígitos';
+      errDiv.style.display = 'block';
+      return;
+    }
+    
+    if(newPin !== confirm){
+      errDiv.textContent = '❌ Los PINs nuevos no coinciden';
+      errDiv.style.display = 'block';
+      return;
+    }
+    
+    // Guardar en Firebase
+    try {
+      State.config.leaderPin = newPin;
+      await sSet('config', State.config);
+      
+      succDiv.textContent = '✅ PIN cambiado exitosamente. Tu nuevo PIN es: ' + newPin;
+      succDiv.style.display = 'block';
+      
+      // Limpiar campos
+      $('#currentPin').value = '';
+      $('#newPin').value = '';
+      $('#confirmPin').value = '';
+      
+      // Después de 2 segundos, recargar
+      setTimeout(()=>renderTabConfig(), 2000);
+    } catch(err){
+      errDiv.textContent = '❌ Error al guardar PIN: ' + err.message;
+      errDiv.style.display = 'block';
+    }
+  };
+}
+
 function paintTabs(){
   document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.t===State.tab));
 }
@@ -973,6 +1065,7 @@ function renderTab(){
   if(State.tab==='resumen') return renderTabResumen();
   if(State.tab==='devocionales') return renderTabDevocionales();
   if(State.tab==='senoritas') return renderTabSenoritas();
+  if(State.tab==='config') return renderTabConfig();
 }
 
 /* --- TAB: HOY --- */
