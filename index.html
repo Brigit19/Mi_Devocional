@@ -525,7 +525,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-final";
+const APP_VERSION = "2026-08-24-with-logout";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1062,7 +1062,7 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      
+      <button id="logout" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);">🚪 Salir</button>
     </div>
       <div class="tabs">
         <div class="tab" data-t="hoy">Hoy</div>
