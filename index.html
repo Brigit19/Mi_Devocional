@@ -389,7 +389,7 @@ async function ensureSeed(){
   }
   let config = await sGet('config');
   if(!config){
-    config = { leaderPin: '1234' };
+    config = { leaderPin: '0103' };
     await sSet('config', config);
   }
   return { names, config };
@@ -497,7 +497,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-BOTONES-PERMANENTES";
+const APP_VERSION = "2026-08-24-PIN-0103";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
