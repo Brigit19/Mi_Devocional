@@ -492,12 +492,12 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  // checkForUpdate(); // DESACTIVADO ESTA SEMANA - Se activa el sábado 18
-  // setInterval(checkForUpdate, 5*60*1000);
+  checkForUpdate(); // ACTIVO - Verifica actualizaciones al iniciar
+  setInterval(checkForUpdate, 5*60*1000); // Verifica cada 5 minutos
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-AYER-HOY-FIXED";
+const APP_VERSION = "2026-08-24-COMPLETE-FINAL";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
