@@ -103,7 +103,7 @@
   /* ---------- top bar ---------- */
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
-    padding:18px 20px 14px; position:sticky; top:0; z-index:20;
+    padding:18px 20px 14px; position:sticky; top:0; z-index:9999;
     background:linear-gradient(180deg, var(--bg) 70%, transparent);
   }
   .brand{ display:flex; align-items:center; gap:10px; }
@@ -385,7 +385,10 @@
 </style>
 </head>
 <body>
-<div id="app"><main id="main"></main></div>
+<div id="app">
+  <div id="topbar-container"></div>
+  <main id="main"></main>
+</div>
 
 <!-- Firebase (base de datos real, funciona fuera de Claude) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -652,7 +655,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-18-day-selector";
+const APP_VERSION = "2026-08-24-version-anterior";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1048,26 +1051,32 @@ async function renderGirlHome(){
         loadDay(dateStr);
       };
     }
+    
+    // AL FINAL DE loadDay, asegurar listeners del topbar
+    setTimeout(()=>{
+      const historyBtn = document.getElementById('historyBtn');
+      if(historyBtn) historyBtn.onclick = ()=>render('girlHistory');
+      
+      const logoutBtn = document.getElementById('logout');
+      if(logoutBtn) logoutBtn.onclick = ()=>confirmLogout();
+    }, 50);
   }
 
-  // CREAR TOPBAR PRIMERO
-  const topbar = document.querySelector('.topbar');
-  if(!topbar){
-    const screen = document.querySelector('.screen');
-    if(screen){
-      const topbarHtml = `
-      <div class="topbar">
-        <div class="brand">
-          <div class="brand-mark"></div>
-          <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
-          <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:#C97676 !important;color:white !important;padding:8px 14px !important;border-radius:6px !important;font-weight:600 !important;cursor:pointer !important;border:none !important;font-size:13px !important;">🚪 Salir</button>
-        </div>
-      </div>`;
-      screen.insertAdjacentHTML('afterbegin', topbarHtml);
-    }
+  // CREAR TOPBAR EN CONTENEDOR EXTERNO (fuera de main, NUNCA se borra)
+  const topbarContainer = document.getElementById('topbar-container');
+  if(topbarContainer && !topbarContainer.querySelector('.topbar')){
+    const topbarHtml = `
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
+        <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:#C97676 !important;color:white !important;padding:8px 14px !important;border-radius:6px !important;font-weight:600 !important;cursor:pointer !important;border:none !important;font-size:13px !important;">🚪 Salir</button>
+      </div>
+    </div>`;
+    topbarContainer.innerHTML = topbarHtml;
   }
 
   // LUEGO cargar el día
