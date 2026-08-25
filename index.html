@@ -650,37 +650,62 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  checkForUpdate(); // ACTIVADO
-  setInterval(checkForUpdate, 5*60*1000);
+  
+  // REVISAR ACTUALIZACIÓN INMEDIATAMENTE al iniciar
+  checkForUpdate();
+  
+  // Revisar CADA MINUTO (no cada 5 minutos)
+  setInterval(checkForUpdate, 60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-version-anterior";
+const APP_VERSION = "2026-08-23-version-muy-antigua";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
-    const res = await fetch('./version.json?t=' + Date.now(), { cache: 'no-store' });
+    // Siempre hacer un fetch FRESCO sin caché
+    const res = await fetch('./version.json?t=' + Date.now(), { 
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+    });
     if(!res.ok) return;
     const data = await res.json();
-    const seenVersion = localStorage.getItem('midevocional_seen_version') || APP_VERSION;
-    if(data.version && data.version !== seenVersion){
+    
+    // LIMPIAR localStorage para que no interfiera
+    const seenVersion = localStorage.getItem('midevocional_seen_version');
+    
+    // Si la versión remota es diferente a APP_VERSION, MOSTRAR BANNER
+    if(data.version && data.version !== APP_VERSION){
+      console.log(`Actualización disponible: ${APP_VERSION} → ${data.version}`);
       showUpdateBanner(data.version);
+    } else {
+      // Si son iguales, actualizar localStorage
+      localStorage.setItem('midevocional_seen_version', APP_VERSION);
     }
-  }catch(e){ }
+  }catch(e){ 
+    console.error('checkForUpdate error:', e);
+  }
 }
 function showUpdateBanner(newVersion){
-  if(updateBannerShown) return;
-  updateBannerShown = true;
+  // Verificar si el banner YA existe
+  if(document.querySelector('.update-banner')) return;
+  
   const bar = document.createElement('div');
   bar.className = 'update-banner';
   bar.innerHTML = `
-    <span>🌸 Hay una nueva versión de la app</span>
-    <button id="updateNowBtn">Actualizar ahora</button>
+    <span>🌸 Hay una nueva versión de la app - ¡Actualiza ahora!</span>
+    <button id="updateNowBtn" style="background:#fff !important;color:var(--primary-dark) !important;font-weight:700 !important;padding:8px 18px !important;border-radius:20px !important;">Actualizar</button>
   `;
-  document.body.appendChild(bar);
+  document.body.insertBefore(bar, document.body.firstChild);
+  
   document.getElementById('updateNowBtn').onclick = ()=>{
     localStorage.setItem('midevocional_seen_version', newVersion);
+    // Forzar recarga completa sin caché
     window.location.href = window.location.pathname + '?v=' + Date.now();
+    // Alternativa: usar hard refresh
+    setTimeout(()=>{ 
+      location.reload(true); 
+    }, 500);
   };
 }
 
