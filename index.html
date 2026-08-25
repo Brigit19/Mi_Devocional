@@ -697,6 +697,10 @@ function render(screen, opts={}){
 
 /* ================= ROLE SELECT ================= */
 function renderRole(){
+  // LIMPIAR TOPBAR (no debe aparecer en pantalla de inicio)
+  const topbarContainer = document.getElementById('topbar-container');
+  if(topbarContainer) topbarContainer.innerHTML = '';
+  
   main.innerHTML = `
   <div class="screen">
     <div class="hero">
@@ -733,6 +737,10 @@ function renderRole(){
 
 /* ================= GIRL LOGIN ================= */
 function renderGirlLogin(){
+  // LIMPIAR TOPBAR (no debe aparecer en pantalla de login)
+  const topbarContainer = document.getElementById('topbar-container');
+  if(topbarContainer) topbarContainer.innerHTML = '';
+  
   const activasNombres = State.names.filter(n=>n.activa !== false);
   const opts = activasNombres.map(n=>`<option value="${n.id}">${n.nombre}</option>`).join('');
   main.innerHTML = `
@@ -855,6 +863,11 @@ function confirmLogout(){
   if(confirm('¿Estás segura de que quieres cerrar sesión?\n\nTus datos están seguros en la nube.')){
     State.currentUser = null;
     sessionStorage.removeItem('selectedDate');
+    
+    // LIMPIAR EL TOPBAR CONTAINER (no debe aparecer en panel inicial)
+    const topbarContainer = document.getElementById('topbar-container');
+    if(topbarContainer) topbarContainer.innerHTML = '';
+    
     render('role');
   }
 }
@@ -1214,6 +1227,10 @@ function createConfetti(){
 
 /* ================= LEADER LOGIN ================= */
 function renderLeaderLogin(){
+  // LIMPIAR TOPBAR (no debe aparecer en pantalla de login)
+  const topbarContainer = document.getElementById('topbar-container');
+  if(topbarContainer) topbarContainer.innerHTML = '';
+  
   main.innerHTML = `
   <div class="screen">
     <div class="topbar" style="padding-left:0;padding-right:0;">
