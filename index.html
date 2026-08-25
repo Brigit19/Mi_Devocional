@@ -430,28 +430,63 @@ async function sList(prefix){
   }catch(e){ console.error('sList error', prefix, e); return []; }
 }
 
+// Función para comprimir imagen
+function compressImage(file, maxWidth, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if(width > maxWidth){
+          height = height * maxWidth / width;
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      };
+      img.onerror = function(){
+        reject(new Error('Error al cargar imagen'));
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){
+      reject(new Error('Error al leer archivo'));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Función para actualizar racha
 async function recordStreak(userId, dateStr){
   try{
-    const key = 'streak:'+userId;
-    const current = (await sGet(key)) || { racha: 0, ultimaFecha: null };
+    const key = 'streak:' + userId;
     const today = todayStr();
-    const yesterday = addDaysToStr(today, -1);
     
     if(dateStr === today){
+      const current = await sGet(key) || { racha: 0, ultimaFecha: null };
+      const yesterday = addDaysToStr(today, -1);
+      
       if(current.ultimaFecha === today){
-        // Ya subió hoy, no cambiar racha
-        return;
-      }else if(current.ultimaFecha === yesterday){
-        // Continuó la racha
-        current.racha = (current.racha || 0) + 1;
-      }else{
-        // Reiniciar racha
-        current.racha = 1;
+        return; // Ya subió hoy
+      } else if(current.ultimaFecha === yesterday){
+        current.racha = (current.racha || 0) + 1; // Continuó
+      } else {
+        current.racha = 1; // Nueva racha
       }
+      
       current.ultimaFecha = today;
       await sSet(key, current);
     }
-  }catch(e){ console.error('recordStreak error', e); }
+  } catch(e){
+    console.error('recordStreak error:', e);
+  }
 }
 
 /* ================= DEFAULT ROSTER ================= */
@@ -1006,7 +1041,7 @@ async function renderGirlHome(){
         // Actualizar racha
         await recordStreak(user.id, dateStr);
         
-        // AHORA mostrar que se guardó
+        // Mostrar que se guardó
         sealBtn.querySelector('.cap').textContent = 'Evidencias subidas';
         
         toast(`✅ Evidencia guardada para ${fmtDateShort(dateStr)}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
@@ -1015,13 +1050,12 @@ async function renderGirlHome(){
     }
   }
 
-  await loadDay(selectedDate);
-
+  // CREAR TOPBAR PRIMERO
   const topbar = document.querySelector('.topbar');
   if(!topbar){
     const screen = document.querySelector('.screen');
     if(screen){
-      screen.innerHTML = `
+      const topbarHtml = `
       <div class="topbar">
         <div class="brand">
           <div class="brand-mark"></div>
@@ -1029,29 +1063,28 @@ async function renderGirlHome(){
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
-          <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:var(--primary-dark);color:white;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer;border:none;">🚪 Salir</button>
+          <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:#C97676 !important;color:white !important;padding:8px 14px !important;border-radius:6px !important;font-weight:600 !important;cursor:pointer !important;border:none !important;font-size:13px !important;">🚪 Salir</button>
         </div>
-      </div>
-      <main></main>` + screen.innerHTML;
+      </div>`;
+      screen.insertAdjacentHTML('afterbegin', topbarHtml);
     }
   }
 
-  document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
+  // LUEGO cargar el día
+  await loadDay(selectedDate);
+
+  // LUEGO asegurar los listeners
+  const historyBtn = document.getElementById('historyBtn');
+  if(historyBtn) historyBtn.onclick = ()=>render('girlHistory');
   
-  // Asegurar que el logout SIEMPRE sea visible y funcione
+  // Asegurar que el logout SIEMPRE funcione
   const logoutBtn = document.getElementById('logout');
   if(logoutBtn){
     logoutBtn.style.display = 'block';
     logoutBtn.style.visibility = 'visible';
+    logoutBtn.style.opacity = '1';
     logoutBtn.onclick = ()=>confirmLogout();
   }
-  
-  // Extra: Buscar el logout en cualquier lugar del DOM como backup
-  setTimeout(()=>{
-    document.querySelectorAll('[id="logout"]').forEach(btn=>{
-      btn.onclick = ()=>confirmLogout();
-    });
-  }, 100);
 
   garantizarLogoutEnSenoritas();
 }
