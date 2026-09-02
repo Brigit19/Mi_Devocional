@@ -1225,7 +1225,7 @@ async function renderTabHoy(){
   if(State.filter==='listas') rows = rows.filter(r=>r.has);
 
   body.innerHTML = `
-    <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div></div>
+    <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div><button id="exportBtn" style="background:var(--success);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📥 Excel</button></div>
     <div class="filter-chips">
       <div class="chip ${State.filter==='todas'?'active':''}" data-f="todas">Todas</div>
       <div class="chip ${State.filter==='pendientes'?'active':''}" data-f="pendientes">Pendientes</div>
@@ -1237,6 +1237,8 @@ async function renderTabHoy(){
   body.querySelectorAll('.roster-row').forEach(row=>{
     row.onclick = ()=> openGirlModal(row.dataset.id, today);
   });
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.onclick = ()=> exportToExcel(today);
 }
 function rosterRowHTML(n, has, mode, pct){
   const initials = n.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
@@ -1506,57 +1508,39 @@ async function openGirlModal(id, dateStr){
     loadEvidence(e.target.value);
   };
   
+  
   overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
-/* ================= EVIDENCE VIEWER & EXPORT ================= */
+/* ========== FUNCIONES PARA EVIDENCIAS Y EXPORTAR ========== */
+
 function renderEvidenceGallery(reg){
   if(!reg) return '<div class="lock-note">Sin evidencia</div>';
-  
   const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
-  if(!fotos || fotos.length === 0){
-    return '<div class="lock-note">🕊️ Sin evidencia subida</div>';
-  }
+  if(!fotos || fotos.length === 0) return '<div class="lock-note">🕊️ Sin evidencia subida</div>';
   
-  return `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;">
-      ${fotos.map((foto, idx)=>`
-        <div style="position:relative;cursor:pointer;border-radius:10px;overflow:hidden;background:var(--line);aspect-ratio:1;">
-          <img src="${foto}" alt="Evidencia ${idx+1}" 
-            style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
-            onclick="
-              const modal = document.createElement('div');
-              modal.className = 'modal-overlay';
-              modal.innerHTML = \`<div style='display:flex;align-items:center;justify-content:center;height:100vh;'><button style='position:absolute;top:20px;right:20px;background:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:24px;cursor:pointer;z-index:10;' onclick='this.closest(\\\".modal-overlay\\\").remove()'>×</button><img src=\\\"\${foto}\\\" style='max-width:90vw;max-height:90vh;object-fit:contain;border-radius:10px;'></div>\`;
-              document.body.appendChild(modal);
-              modal.onclick = (e)=>{ if(e.target === modal) modal.remove(); };
-            "
-          >
-          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">${idx+1}/${fotos.length}</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;">
+    ${fotos.map((foto,idx)=>`<div style="position:relative;cursor:pointer;border-radius:10px;overflow:hidden;background:var(--line);aspect-ratio:1;">
+      <img src="${foto}" alt="Evidencia ${idx+1}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" onclick="const m=document.createElement('div');m.className='modal-overlay';m.innerHTML='<div style=\"display:flex;align-items:center;justify-content:center;height:100vh;\"><button style=\"position:absolute;top:20px;right:20px;background:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:24px;cursor:pointer;z-index:10;\" onclick=\"this.closest(\\\".modal-overlay\\\").remove()\">×</button><img src=\\\"\${foto}\\\" style=\"max-width:90vw;max-height:90vh;object-fit:contain;border-radius:10px;\"></div>';document.body.appendChild(m);m.onclick=(e)=>{if(e.target===m)m.remove();};"><span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">${idx+1}/${fotos.length}</span></div>`).join('')}
+  </div>`;
 }
 
 async function exportToExcel(dateStr){
   const keys = await sList('registro:'+dateStr+':');
   const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
-  
-  let csv = 'Nombre,Subió,Hora,Racha,Total Mes\n';
+  let csv = 'Nombre,Subió,Hora,Racha,Total\n';
   
   for(const girl of State.names){
     const has = submittedIds.has(girl.id);
-    const streak = (await sGet('streak:'+girl.id)) || { racha:0 };
-    const monthStats = (await sGet('statsmonth:'+girl.id+':'+monthKey(dateStr))) || { totalM:0 };
+    const streak = (await sGet('streak:'+girl.id)) || {racha:0};
+    const monthStats = (await sGet('statsmonth:'+girl.id+':'+monthKey(dateStr))) || {totalM:0};
     const reg = await sGet('registro:'+dateStr+':'+girl.id);
     const hora = (reg && reg.hora) ? reg.hora : '-';
-    
     csv += `"${girl.nombre}","${has?'Sí':'No'}","${hora}",${streak.racha},${monthStats.totalM}\n`;
   }
   
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `Evidencias_${dateStr}.csv`;
@@ -1571,168 +1555,126 @@ async function exportRangeToExcel(startDate, endDate){
   
   while(current <= end){
     const year = current.getFullYear();
-    const month = String(current.getMonth() + 1).padStart(2, '0');
-    const day = String(current.getDate()).padStart(2, '0');
+    const month = String(current.getMonth()+1).padStart(2,'0');
+    const day = String(current.getDate()).padStart(2,'0');
     dates.push(`${year}-${month}-${day}`);
-    current.setDate(current.getDate() + 1);
+    current.setDate(current.getDate()+1);
   }
   
-  let csv = 'Nombre,' + dates.map(d => `"${fmtDateShort(d)}"`).join(',') + ',Racha,Total Mes\n';
+  let csv = 'Nombre,'+dates.map(d=>`"${fmtDateShort(d)}"`).join(',')+ ',Racha,Total\n';
   
   for(const girl of State.names){
     let row = `"${girl.nombre}"`;
-    
     for(const dateStr of dates){
       const keys = await sList('registro:'+dateStr+':');
       const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
       const has = submittedIds.has(girl.id);
-      row += ',' + (has ? '✓' : '');
+      row += ','+(has?'✓':'');
     }
-    
-    const streak = (await sGet('streak:'+girl.id)) || { racha:0 };
-    const monthStats = (await sGet('statsmonth:'+girl.id+':'+monthKey(endDate))) || { totalM:0 };
+    const streak = (await sGet('streak:'+girl.id)) || {racha:0};
+    const monthStats = (await sGet('statsmonth:'+girl.id+':'+monthKey(endDate))) || {totalM:0};
     row += `,${streak.racha},${monthStats.totalM}`;
-    
-    csv += row + '\n';
+    csv += row+'\n';
   }
   
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  
-  // Detectar si es móvil
+  const filename = `Reporte_${startDate}_a_${endDate}.csv`;
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   if(!isMobile){
-    // Desktop: intentar descarga directa
-    try {
-      const url = URL.createObjectURL(blob);
+    try{
+      const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Reporte_${startDate}_a_${endDate}.csv`;
+      link.download = filename;
       link.style.display = 'none';
       document.body.appendChild(link);
-      
-      // Hacer click para descargar
       link.click();
-      
-      // Limpiar después de un delay
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
-      
-      toast(`✅ Descargado: Reporte_${startDate}_a_${endDate}.csv`);
-    } catch(error) {
-      // Si falla, mostrar alternativa
-      console.error('Error descarga:', error);
-      showCSVModal(csv, `Reporte_${startDate}_a_${endDate}.csv`);
+      setTimeout(()=>{document.body.removeChild(link);URL.revokeObjectURL(url);},100);
+      toast(`✅ Descargado: ${filename}`);
+    }catch(err){
+      console.error('Error descarga:',err);
+      showCSVModal(csv,filename);
     }
-  } else {
-    // Móvil: mostrar en modal
-    showCSVModal(csv, `Reporte_${startDate}_a_${endDate}.csv`);
-    showCSVModal(csv, `Reporte_${startDate}_a_${endDate}.csv`);
+  }else{
+    showCSVModal(csv,filename);
   }
 }
-}
 
-function showCSVModal(csvContent, filename){
+function showCSVModal(csvContent,filename){
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal" style="max-height:90vh;overflow-y:auto;">
-      <button class="modal-close">×</button>
-      <h3>✅ Reporte Listo</h3>
-      <p style="color:var(--ink-soft);font-size:13px;">Tu archivo está generado. Elige cómo obtenerlo:</p>
-      
-      <div style="display:flex;flex-direction:column;gap:10px;margin:20px 0;">
-        <button id="copyBtn" class="btn btn-primary" style="width:100%;background:var(--success);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">📋 Copiar al portapapeles</button>
-        <button id="shareBtn" class="btn btn-primary" style="width:100%;background:var(--primary-dark);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">📤 Compartir archivo</button>
-      </div>
-      
-      <p style="color:var(--ink-soft);font-size:12px;margin-top:20px;margin-bottom:8px;">O copia el contenido manualmente:</p>
-      <textarea id="csvTextarea" readonly style="width:100%;height:180px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:monospace;font-size:11px;background:var(--bg-card);color:var(--ink);resize:none;">${csvContent}</textarea>
-    </div>`;
+  overlay.innerHTML = `<div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <button class="modal-close">×</button>
+    <h3>✅ Reporte Listo</h3>
+    <p style="color:var(--ink-soft);font-size:13px;">Tu archivo está generado. Elige cómo obtenerlo:</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin:20px 0;">
+      <button id="copyBtn" class="btn btn-primary" style="width:100%;background:var(--success);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">📋 Copiar al portapapeles</button>
+      <button id="shareBtn" class="btn btn-primary" style="width:100%;background:var(--primary-dark);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">📤 Compartir archivo</button>
+    </div>
+    <p style="color:var(--ink-soft);font-size:12px;margin-top:20px;margin-bottom:8px;">O copia el contenido manualmente:</p>
+    <textarea id="csvTextarea" readonly style="width:100%;height:180px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:monospace;font-size:11px;background:var(--bg-card);color:var(--ink);resize:none;">${csvContent}</textarea>
+  </div>`;
   
   document.body.appendChild(overlay);
   
-  // Botón Copiar
   document.getElementById('copyBtn').onclick = ()=>{
     const textarea = document.getElementById('csvTextarea');
     textarea.select();
     document.execCommand('copy');
     toast('✅ Copiado al portapapeles');
-    
     const btn = document.getElementById('copyBtn');
-    const originalText = btn.textContent;
+    const orig = btn.textContent;
     btn.textContent = '✓ ¡Copiado!';
     btn.style.background = 'var(--primary-dark)';
-    setTimeout(()=>{ 
-      btn.textContent = originalText; 
-      btn.style.background = 'var(--success)';
-    }, 2000);
+    setTimeout(()=>{btn.textContent = orig;btn.style.background = 'var(--success)';},2000);
   };
   
-  // Botón Compartir
   document.getElementById('shareBtn').onclick = async ()=>{
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const file = new File([blob], filename, { type: 'text/csv' });
-    
+    const blob = new Blob([csvContent],{type:'text/csv'});
+    const file = new File([blob],filename,{type:'text/csv'});
     if(navigator.share){
-      try {
-        await navigator.share({
-          files: [file],
-          title: 'Reporte de Devocionales',
-          text: 'Reporte completo de evidencias de devocionales'
-        });
+      try{
+        await navigator.share({files:[file],title:'Reporte de Devocionales',text:'Reporte completo de evidencias de devocionales'});
         toast('✅ Compartido');
-      } catch(err){
-        if(err.name !== 'AbortError') console.error(err);
+      }catch(err){
+        if(err.name!=='AbortError')console.error(err);
       }
-    } else {
+    }else{
       toast('⚠️ Tu navegador no soporta compartir archivos');
     }
   };
   
-  overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
-  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  overlay.querySelector('.modal-close').onclick = ()=>overlay.remove();
+  overlay.onclick = (e)=>{if(e.target===overlay)overlay.remove();};
 }
 
 function showReportModal(){
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal">
-      <button class="modal-close">×</button>
-      <h3>Descargar Reporte Completo</h3>
-      <p style="color:var(--ink-soft);font-size:13px;">Selecciona el rango de fechas para descargar todas las evidencias</p>
-      
-      <label style="margin-top:16px;">Fecha inicio:</label>
-      <input type="date" id="startDate" value="2026-08-24" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;">
-      
-      <label>Fecha fin:</label>
-      <input type="date" id="endDate" value="2026-09-01" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:20px;">
-      
-      <button class="btn btn-primary" id="downloadBtn" style="width:100%;">📥 Descargar Reporte</button>
-    </div>`;
+  overlay.innerHTML = `<div class="modal">
+    <button class="modal-close">×</button>
+    <h3>Descargar Reporte Completo</h3>
+    <p style="color:var(--ink-soft);font-size:13px;">Selecciona el rango de fechas para descargar todas las evidencias</p>
+    <label style="margin-top:16px;">Fecha inicio:</label>
+    <input type="date" id="startDate" value="2026-08-24" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;">
+    <label>Fecha fin:</label>
+    <input type="date" id="endDate" value="2026-09-01" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:20px;">
+    <button class="btn btn-primary" id="downloadBtn" style="width:100%;">📥 Descargar Reporte</button>
+  </div>`;
   
   document.body.appendChild(overlay);
   
   document.getElementById('downloadBtn').onclick = async ()=>{
     const start = document.getElementById('startDate').value;
     const end = document.getElementById('endDate').value;
-    if(!start || !end){
-      alert('Por favor selecciona ambas fechas');
-      return;
-    }
-    if(start > end){
-      alert('La fecha inicio debe ser menor a la fecha fin');
-      return;
-    }
+    if(!start||!end){alert('Por favor selecciona ambas fechas');return;}
+    if(start>end){alert('La fecha inicio debe ser menor a la fecha fin');return;}
     overlay.remove();
-    await exportRangeToExcel(start, end);
+    await exportRangeToExcel(start,end);
   };
   
-  overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
-  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  overlay.querySelector('.modal-close').onclick = ()=>overlay.remove();
+  overlay.onclick = (e)=>{if(e.target===overlay)overlay.remove();};
 }
 
 init();
