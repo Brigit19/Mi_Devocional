@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-07-18-day-selector";
+const APP_VERSION = "2026-09-02-reporte-fecha-rango";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -741,7 +741,10 @@ async function renderGirlHistory(){
         </div>
         
         <hr style="margin:20px 0;border:none;border-top:1px solid var(--line);">
-        <h2 style="color:var(--primary-dark);margin-bottom:16px;">📖 Tu historial</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="color:var(--primary-dark);margin:0;">📖 Tu historial</h2>
+          <button id="downloadHistoryBtn" style="padding:8px 16px;background:var(--primary-dark);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">📊 Descargar</button>
+        </div>
         
         <div id="historyContent" style="max-height:40vh;overflow-y:auto;">
           <div style="text-align:center;padding:20px;color:var(--ink-soft);">Cargando tus devocionales...</div>
@@ -777,7 +780,7 @@ async function renderGirlHistory(){
             </div>
             <span style="font-size:28px;">✨</span>
           </div>
-          ${reg.fotos ? `<div class="thumb-grid" style="margin-top:8px;grid-template-columns:repeat(3,1fr);">${reg.fotos.map(f=>`<img src="${f}" style="height:60px;">`).join('')}</div>` : ''}
+          ${reg.fotos ? `<div class="thumb-grid" style="margin-top:8px;grid-template-columns:repeat(3,1fr);gap:8px;">${reg.fotos.map(f=>`<img src="${f}" style="height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;" onclick="openImageViewer('${f}');" onmouseover="this.style.transform='scale(1.05)';this.style.borderColor='var(--primary-dark)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='transparent';this.style.boxShadow='none';"/>`).join('')}</div>` : ''}
         </div>
       `;
     }
@@ -786,6 +789,32 @@ async function renderGirlHistory(){
   }
   
   document.getElementById('backBtn').onclick = ()=> renderGirlHome();
+  document.getElementById('downloadHistoryBtn').onclick = async ()=>{
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    let csv = 'Fecha,Estado\\n';
+    const dim = daysInMonth(now.getFullYear(), now.getMonth()+1);
+    
+    for(let i=1; i<=dim; i++){
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+      const reg = await sGet('registro:'+dateStr+':'+user.id);
+      const status = reg ? (reg.fotos && reg.fotos.length > 0 ? 'Presentado' : 'Sin fotos') : 'No enviado';
+      csv += `"${fmtDateShort(dateStr)}","${status}"\\n`;
+    }
+    
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Mi_Historial_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toast('✅ Historial descargado');
+  };
 }
 
 
@@ -936,7 +965,7 @@ async function renderGirlHome(){
         <input type="file" id="fileInputDay${dateStr.replace(/-/g,'')}" accept="image/*" multiple style="display:none;">
         ${registroDay && registroDay.fotos && registroDay.fotos.length > 0 ? `
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-          ${registroDay.fotos.map((f,i)=>`<img src="${f}" style="width:60px;height:60px;border-radius:8px;cursor:pointer;object-fit:cover;" onclick="openImageViewer('${f}');">`).join('')}
+          ${registroDay.fotos.map((f,i)=>`<img src="${f}" style="width:60px;height:60px;border-radius:8px;cursor:pointer;object-fit:cover;border:2px solid transparent;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onclick="openImageViewer('${f}');" onmouseover="this.style.transform='scale(1.1)';this.style.borderColor='var(--primary-dark)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='transparent';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">`).join('')}
         </div>` : ''}
         ${registroDay && registroDay.hora ? `<p style="text-align:center;font-size:12px;color:var(--ink-soft);margin-top:12px;">Subido: ${registroDay.hora}</p>` : ''}
       </div>` : ''}
@@ -1221,7 +1250,7 @@ async function renderTabHoy(){
   if(State.filter==='listas') rows = rows.filter(r=>r.has);
 
   body.innerHTML = `
-    <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div></div>
+    <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div><button id="downloadReportBtn" style="padding:6px 12px;background:var(--primary-dark);color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;">📊 Reporte</button></div>
     <div class="filter-chips">
       <div class="chip ${State.filter==='todas'?'active':''}" data-f="todas">Todas</div>
       <div class="chip ${State.filter==='pendientes'?'active':''}" data-f="pendientes">Pendientes</div>
@@ -1230,6 +1259,7 @@ async function renderTabHoy(){
     <div id="rosterList">${rows.map(r=>rosterRowHTML(r.n, r.has, 'hoy')).join('')}</div>
   `;
   body.querySelectorAll('.chip').forEach(c=> c.onclick=()=>{ State.filter=c.dataset.f; renderTabHoy(); });
+  document.getElementById('downloadReportBtn').onclick = downloadDevocionalReport;
   body.querySelectorAll('.roster-row').forEach(row=>{
     row.onclick = ()=> openGirlModal(row.dataset.id, today);
   });
@@ -1504,6 +1534,65 @@ async function openGirlModal(id, dateStr){
   
   overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+}
+
+/* ================= IMAGE VIEWER ================= */
+function openImageViewer(src){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+  overlay.innerHTML = `<img src="${src}" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;box-shadow:0 0 30px rgba(0,0,0,0.5);">`;
+  overlay.onclick = ()=> overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+/* ================= EVIDENCE GALLERY ================= */
+function renderEvidenceGallery(reg){
+  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
+  if(fotos.length === 0) return '<p style="color:var(--ink-soft);font-size:13px;">Sin fotos</p>';
+  return `
+    <div class="thumb-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;">
+      ${fotos.map(f=>`<img src="${f}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform .2s;border:2px solid transparent;" onclick="openImageViewer('${f}');" onmouseover="this.style.transform='scale(1.05)';this.style.borderColor='var(--primary-dark)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';this.style.cursor='pointer';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='transparent';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';"/>`).join('')}
+    </div>
+  `;
+}
+
+/* ================= EXCEL DOWNLOAD ================= */
+async function downloadDevocionalReport(){
+  // Rango: 25 ago - última fecha disponible
+  const start = new Date(2026, 7, 25); // 25 agosto
+  const today = new Date();
+  
+  let csv = 'Señorita,Fecha,Estado,Hora\n';
+  
+  // Recorrer cada día
+  for(let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
+    const dateStr = d.toISOString().split('T')[0];
+    
+    // Recorrer cada señorita
+    for(const person of State.names){
+      if(!person.activa) continue;
+      
+      const reg = await sGet('registro:'+dateStr+':'+person.id);
+      const hora = reg ? (reg.hora || 'sin registrar') : '';
+      const estado = reg ? (reg.fotos && reg.fotos.length > 0 ? 'Presentado' : 'Sin fotos') : 'No enviado';
+      
+      csv += `"${person.nombre}","${dateStr}","${estado}","${hora}"\n`;
+    }
+  }
+  
+  // Descargar como CSV (Excel lo abre correctamente)
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Reporte_Devocionales_25ago-${today.getDate()}sep.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  toast('✅ Reporte descargado');
 }
 
 init();
