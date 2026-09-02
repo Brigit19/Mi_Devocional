@@ -103,7 +103,7 @@
   /* ---------- top bar ---------- */
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
-    padding:18px 20px 14px; position:sticky; top:0; z-index:9999;
+    padding:18px 20px 14px; position:sticky; top:0; z-index:20;
     background:linear-gradient(180deg, var(--bg) 70%, transparent);
   }
   .brand{ display:flex; align-items:center; gap:10px; }
@@ -385,10 +385,7 @@
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="topbar-container"></div>
-  <main id="main"></main>
-</div>
+<div id="app"><main id="main"></main></div>
 
 <!-- Firebase (base de datos real, funciona fuera de Claude) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -431,65 +428,6 @@ async function sList(prefix){
       .get();
     return snap.docs.map(d=>d.id);
   }catch(e){ console.error('sList error', prefix, e); return []; }
-}
-
-// Función para comprimir imagen
-function compressImage(file, maxWidth, quality){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = function(e){
-      const img = new Image();
-      img.onload = function(){
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if(width > maxWidth){
-          height = height * maxWidth / width;
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        const compressed = canvas.toDataURL('image/jpeg', quality);
-        resolve(compressed);
-      };
-      img.onerror = function(){
-        reject(new Error('Error al cargar imagen'));
-      };
-      img.src = e.target.result;
-    };
-    reader.onerror = function(){
-      reject(new Error('Error al leer archivo'));
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-// Función para actualizar racha
-async function recordStreak(userId, dateStr){
-  try{
-    const key = 'streak:' + userId;
-    const today = todayStr();
-    
-    if(dateStr === today){
-      const current = await sGet(key) || { racha: 0, ultimaFecha: null };
-      const yesterday = addDaysToStr(today, -1);
-      
-      if(current.ultimaFecha === today){
-        return; // Ya subió hoy
-      } else if(current.ultimaFecha === yesterday){
-        current.racha = (current.racha || 0) + 1; // Continuó
-      } else {
-        current.racha = 1; // Nueva racha
-      }
-      
-      current.ultimaFecha = today;
-      await sSet(key, current);
-    }
-  } catch(e){
-    console.error('recordStreak error:', e);
-  }
 }
 
 /* ================= DEFAULT ROSTER ================= */
@@ -650,62 +588,37 @@ async function init(){
   render('role');
   initDarkMode();
   scheduleNotifications();
-  
-  // REVISAR ACTUALIZACIÓN INMEDIATAMENTE al iniciar
-  checkForUpdate();
-  
-  // Revisar CADA MINUTO (no cada 5 minutos)
-  setInterval(checkForUpdate, 60*1000);
+  checkForUpdate(); // ACTIVADO
+  setInterval(checkForUpdate, 5*60*1000);
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-08-24-actualizacion-forzada-banner-agresivo";
+const APP_VERSION = "2026-07-18-day-selector";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
-    // Siempre hacer un fetch FRESCO sin caché
-    const res = await fetch('./version.json?t=' + Date.now(), { 
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-    });
+    const res = await fetch('./version.json?t=' + Date.now(), { cache: 'no-store' });
     if(!res.ok) return;
     const data = await res.json();
-    
-    // LIMPIAR localStorage para que no interfiera
-    const seenVersion = localStorage.getItem('midevocional_seen_version');
-    
-    // Si la versión remota es diferente a APP_VERSION, MOSTRAR BANNER
-    if(data.version && data.version !== APP_VERSION){
-      console.log(`Actualización disponible: ${APP_VERSION} → ${data.version}`);
+    const seenVersion = localStorage.getItem('midevocional_seen_version') || APP_VERSION;
+    if(data.version && data.version !== seenVersion){
       showUpdateBanner(data.version);
-    } else {
-      // Si son iguales, actualizar localStorage
-      localStorage.setItem('midevocional_seen_version', APP_VERSION);
     }
-  }catch(e){ 
-    console.error('checkForUpdate error:', e);
-  }
+  }catch(e){ }
 }
 function showUpdateBanner(newVersion){
-  // Verificar si el banner YA existe
-  if(document.querySelector('.update-banner')) return;
-  
+  if(updateBannerShown) return;
+  updateBannerShown = true;
   const bar = document.createElement('div');
   bar.className = 'update-banner';
   bar.innerHTML = `
-    <span>🌸 Hay una nueva versión de la app - ¡Actualiza ahora!</span>
-    <button id="updateNowBtn" style="background:#fff !important;color:var(--primary-dark) !important;font-weight:700 !important;padding:8px 18px !important;border-radius:20px !important;">Actualizar</button>
+    <span>🌸 Hay una nueva versión de la app</span>
+    <button id="updateNowBtn">Actualizar ahora</button>
   `;
-  document.body.insertBefore(bar, document.body.firstChild);
-  
+  document.body.appendChild(bar);
   document.getElementById('updateNowBtn').onclick = ()=>{
     localStorage.setItem('midevocional_seen_version', newVersion);
-    // Forzar recarga completa sin caché
     window.location.href = window.location.pathname + '?v=' + Date.now();
-    // Alternativa: usar hard refresh
-    setTimeout(()=>{ 
-      location.reload(true); 
-    }, 500);
   };
 }
 
@@ -722,10 +635,6 @@ function render(screen, opts={}){
 
 /* ================= ROLE SELECT ================= */
 function renderRole(){
-  // LIMPIAR TOPBAR (no debe aparecer en pantalla de inicio)
-  const topbarContainer = document.getElementById('topbar-container');
-  if(topbarContainer) topbarContainer.innerHTML = '';
-  
   main.innerHTML = `
   <div class="screen">
     <div class="hero">
@@ -762,10 +671,6 @@ function renderRole(){
 
 /* ================= GIRL LOGIN ================= */
 function renderGirlLogin(){
-  // LIMPIAR TOPBAR (no debe aparecer en pantalla de login)
-  const topbarContainer = document.getElementById('topbar-container');
-  if(topbarContainer) topbarContainer.innerHTML = '';
-  
   const activasNombres = State.names.filter(n=>n.activa !== false);
   const opts = activasNombres.map(n=>`<option value="${n.id}">${n.nombre}</option>`).join('');
   main.innerHTML = `
@@ -888,11 +793,6 @@ function confirmLogout(){
   if(confirm('¿Estás segura de que quieres cerrar sesión?\n\nTus datos están seguros en la nube.')){
     State.currentUser = null;
     sessionStorage.removeItem('selectedDate');
-    
-    // LIMPIAR EL TOPBAR CONTAINER (no debe aparecer en panel inicial)
-    const topbarContainer = document.getElementById('topbar-container');
-    if(topbarContainer) topbarContainer.innerHTML = '';
-    
     render('role');
   }
 }
@@ -1082,56 +982,47 @@ async function renderGirlHome(){
         // Actualizar racha
         await recordStreak(user.id, dateStr);
         
-        // Mostrar que se guardó
-        sealBtn.querySelector('.cap').textContent = 'Evidencias subidas';
-        
         toast(`✅ Evidencia guardada para ${fmtDateShort(dateStr)}! 🌸 (${fotos.length} foto${fotos.length>1?'s':''})`);
         loadDay(dateStr);
       };
     }
-    
-    // AL FINAL DE loadDay, asegurar listeners del topbar
-    setTimeout(()=>{
-      const historyBtn = document.getElementById('historyBtn');
-      if(historyBtn) historyBtn.onclick = ()=>render('girlHistory');
-      
-      const logoutBtn = document.getElementById('logout');
-      if(logoutBtn) logoutBtn.onclick = ()=>confirmLogout();
-    }, 50);
   }
 
-  // CREAR TOPBAR EN CONTENEDOR EXTERNO (fuera de main, NUNCA se borra)
-  const topbarContainer = document.getElementById('topbar-container');
-  if(topbarContainer && !topbarContainer.querySelector('.topbar')){
-    const topbarHtml = `
-    <div class="topbar">
-      <div class="brand">
-        <div class="brand-mark"></div>
-        <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
-        <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:#C97676 !important;color:white !important;padding:8px 14px !important;border-radius:6px !important;font-weight:600 !important;cursor:pointer !important;border:none !important;font-size:13px !important;">🚪 Salir</button>
-      </div>
-    </div>`;
-    topbarContainer.innerHTML = topbarHtml;
-  }
-
-  // LUEGO cargar el día
   await loadDay(selectedDate);
 
-  // LUEGO asegurar los listeners
-  const historyBtn = document.getElementById('historyBtn');
-  if(historyBtn) historyBtn.onclick = ()=>render('girlHistory');
+  const topbar = document.querySelector('.topbar');
+  if(!topbar){
+    const screen = document.querySelector('.screen');
+    if(screen){
+      screen.innerHTML = `
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
+          <button class="logout-btn" id="logout" title="Cerrar sesión">🚪 Salir</button>
+        </div>
+      </div>
+      <main></main>` + screen.innerHTML;
+    }
+  }
+
+  document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
   
-  // Asegurar que el logout SIEMPRE funcione
+  // Asegurar que el logout siempre funcione
   const logoutBtn = document.getElementById('logout');
   if(logoutBtn){
-    logoutBtn.style.display = 'block';
-    logoutBtn.style.visibility = 'visible';
-    logoutBtn.style.opacity = '1';
     logoutBtn.onclick = ()=>confirmLogout();
   }
+  
+  // Extra: Buscar el logout en cualquier lugar del DOM como backup
+  setTimeout(()=>{
+    document.querySelectorAll('[id="logout"]').forEach(btn=>{
+      btn.onclick = ()=>confirmLogout();
+    });
+  }, 100);
 
   garantizarLogoutEnSenoritas();
 }
@@ -1252,10 +1143,6 @@ function createConfetti(){
 
 /* ================= LEADER LOGIN ================= */
 function renderLeaderLogin(){
-  // LIMPIAR TOPBAR (no debe aparecer en pantalla de login)
-  const topbarContainer = document.getElementById('topbar-container');
-  if(topbarContainer) topbarContainer.innerHTML = '';
-  
   main.innerHTML = `
   <div class="screen">
     <div class="topbar" style="padding-left:0;padding-right:0;">
@@ -1287,7 +1174,10 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      <button class="icon-btn" id="logout">Salir</button>
+      <div style="display:flex;gap:8px;">
+        <button class="icon-btn" id="reportBtn" style="background:var(--success);color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;">📥 Reporte</button>
+        <button class="icon-btn" id="logout">Salir</button>
+      </div>
     </div>
     <main>
       <div class="tabs">
@@ -1300,6 +1190,7 @@ async function renderLeaderHome(){
     </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
+  $('#reportBtn').onclick = ()=> showReportModal();
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
   });
@@ -1613,6 +1504,140 @@ async function openGirlModal(id, dateStr){
   
   document.getElementById('modalDatePicker').onchange = (e)=>{
     loadEvidence(e.target.value);
+  };
+  
+  overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+}
+
+/* ================= EVIDENCE VIEWER & EXPORT ================= */
+function renderEvidenceGallery(reg){
+  if(!reg) return '<div class="lock-note">Sin evidencia</div>';
+  
+  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
+  if(!fotos || fotos.length === 0){
+    return '<div class="lock-note">🕊️ Sin evidencia subida</div>';
+  }
+  
+  return `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;">
+      ${fotos.map((foto, idx)=>`
+        <div style="position:relative;cursor:pointer;border-radius:10px;overflow:hidden;background:var(--line);aspect-ratio:1;">
+          <img src="${foto}" alt="Evidencia ${idx+1}" 
+            style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+            onclick="
+              const modal = document.createElement('div');
+              modal.className = 'modal-overlay';
+              modal.innerHTML = \`<div style='display:flex;align-items:center;justify-content:center;height:100vh;'><button style='position:absolute;top:20px;right:20px;background:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:24px;cursor:pointer;z-index:10;' onclick='this.closest(\\\".modal-overlay\\\").remove()'>×</button><img src=\\\"\${foto}\\\" style='max-width:90vw;max-height:90vh;object-fit:contain;border-radius:10px;'></div>\`;
+              document.body.appendChild(modal);
+              modal.onclick = (e)=>{ if(e.target === modal) modal.remove(); };
+            "
+          >
+          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">${idx+1}/${fotos.length}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function exportToExcel(dateStr){
+  const keys = await sList('registro:'+dateStr+':');
+  const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
+  
+  let csv = 'Nombre,Subió,Hora,Racha,Total Mes\n';
+  
+  for(const girl of State.names){
+    const has = submittedIds.has(girl.id);
+    const streak = (await sGet('streak:'+girl.id)) || { racha:0 };
+    const monthStats = (await sGet('statsmonth:'+girl.id+':'+monthKey(dateStr))) || { totalM:0 };
+    const reg = await sGet('registro:'+dateStr+':'+girl.id);
+    const hora = (reg && reg.hora) ? reg.hora : '-';
+    
+    csv += `"${girl.nombre}","${has?'Sí':'No'}","${hora}",${streak.racha},${monthStats.totalM}\n`;
+  }
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `Evidencias_${dateStr}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+async function exportRangeToExcel(startDate, endDate){
+  let dates = [];
+  let current = new Date(startDate);
+  let end = new Date(endDate);
+  
+  while(current <= end){
+    const year = current.getFullYear();
+    const month = String(current.getMonth() + 1).padStart(2, '0');
+    const day = String(current.getDate()).padStart(2, '0');
+    dates.push(`${year}-${month}-${day}`);
+    current.setDate(current.getDate() + 1);
+  }
+  
+  let csv = 'Nombre,' + dates.map(d => `"${fmtDateShort(d)}"`).join(',') + ',Racha,Total Mes\n';
+  
+  for(const girl of State.names){
+    let row = `"${girl.nombre}"`;
+    
+    for(const dateStr of dates){
+      const keys = await sList('registro:'+dateStr+':');
+      const submittedIds = new Set(keys.map(k=>k.split(':')[2]));
+      const has = submittedIds.has(girl.id);
+      row += ',' + (has ? '✓' : '');
+    }
+    
+    const streak = (await sGet('streak:'+girl.id)) || { racha:0 };
+    const monthStats = (await sGet('statsmonth:'+girl.id+':'+monthKey(endDate))) || { totalM:0 };
+    row += `,${streak.racha},${monthStats.totalM}`;
+    
+    csv += row + '\n';
+  }
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `Reporte_Completo_${startDate}_a_${endDate}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  toast(`✅ Reporte descargado: ${fmtDateShort(startDate)} a ${fmtDateShort(endDate)}`);
+}
+
+function showReportModal(){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <button class="modal-close">×</button>
+      <h3>Descargar Reporte Completo</h3>
+      <p style="color:var(--ink-soft);font-size:13px;">Selecciona el rango de fechas para descargar todas las evidencias</p>
+      
+      <label style="margin-top:16px;">Fecha inicio:</label>
+      <input type="date" id="startDate" value="2026-08-24" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;">
+      
+      <label>Fecha fin:</label>
+      <input type="date" id="endDate" value="2026-09-01" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:20px;">
+      
+      <button class="btn btn-primary" id="downloadBtn" style="width:100%;">📥 Descargar Reporte</button>
+    </div>`;
+  
+  document.body.appendChild(overlay);
+  
+  document.getElementById('downloadBtn').onclick = async ()=>{
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    if(!start || !end){
+      alert('Por favor selecciona ambas fechas');
+      return;
+    }
+    if(start > end){
+      alert('La fecha inicio debe ser menor a la fecha fin');
+      return;
+    }
+    overlay.remove();
+    await exportRangeToExcel(start, end);
   };
   
   overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
