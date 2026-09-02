@@ -1597,12 +1597,103 @@ async function exportRangeToExcel(startDate, endDate){
   }
   
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `Reporte_Completo_${startDate}_a_${endDate}.csv`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-  toast(`✅ Reporte descargado: ${fmtDateShort(startDate)} a ${fmtDateShort(endDate)}`);
+  
+  // Detectar si es móvil
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  if(!isMobile){
+    // Desktop: intentar descarga directa
+    try {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Reporte_${startDate}_a_${endDate}.csv`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      
+      // Hacer click para descargar
+      link.click();
+      
+      // Limpiar después de un delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      toast(`✅ Descargado: Reporte_${startDate}_a_${endDate}.csv`);
+    } catch(error) {
+      // Si falla, mostrar alternativa
+      console.error('Error descarga:', error);
+      showCSVModal(csv, `Reporte_${startDate}_a_${endDate}.csv`);
+    }
+  } else {
+    // Móvil: mostrar en modal
+    showCSVModal(csv, `Reporte_${startDate}_a_${endDate}.csv`);
+    showCSVModal(csv, `Reporte_${startDate}_a_${endDate}.csv`);
+  }
+}
+}
+
+function showCSVModal(csvContent, filename){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-height:90vh;overflow-y:auto;">
+      <button class="modal-close">×</button>
+      <h3>✅ Reporte Listo</h3>
+      <p style="color:var(--ink-soft);font-size:13px;">Tu archivo está generado. Elige cómo obtenerlo:</p>
+      
+      <div style="display:flex;flex-direction:column;gap:10px;margin:20px 0;">
+        <button id="copyBtn" class="btn btn-primary" style="width:100%;background:var(--success);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">📋 Copiar al portapapeles</button>
+        <button id="shareBtn" class="btn btn-primary" style="width:100%;background:var(--primary-dark);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">📤 Compartir archivo</button>
+      </div>
+      
+      <p style="color:var(--ink-soft);font-size:12px;margin-top:20px;margin-bottom:8px;">O copia el contenido manualmente:</p>
+      <textarea id="csvTextarea" readonly style="width:100%;height:180px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:monospace;font-size:11px;background:var(--bg-card);color:var(--ink);resize:none;">${csvContent}</textarea>
+    </div>`;
+  
+  document.body.appendChild(overlay);
+  
+  // Botón Copiar
+  document.getElementById('copyBtn').onclick = ()=>{
+    const textarea = document.getElementById('csvTextarea');
+    textarea.select();
+    document.execCommand('copy');
+    toast('✅ Copiado al portapapeles');
+    
+    const btn = document.getElementById('copyBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '✓ ¡Copiado!';
+    btn.style.background = 'var(--primary-dark)';
+    setTimeout(()=>{ 
+      btn.textContent = originalText; 
+      btn.style.background = 'var(--success)';
+    }, 2000);
+  };
+  
+  // Botón Compartir
+  document.getElementById('shareBtn').onclick = async ()=>{
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const file = new File([blob], filename, { type: 'text/csv' });
+    
+    if(navigator.share){
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Reporte de Devocionales',
+          text: 'Reporte completo de evidencias de devocionales'
+        });
+        toast('✅ Compartido');
+      } catch(err){
+        if(err.name !== 'AbortError') console.error(err);
+      }
+    } else {
+      toast('⚠️ Tu navegador no soporta compartir archivos');
+    }
+  };
+  
+  overlay.querySelector('.modal-close').onclick = ()=> overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
 function showReportModal(){
