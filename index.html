@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-03-reporte-todas-36-verde";
+const APP_VERSION = "2026-09-03-logout-mejorado-visible";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1029,9 +1029,9 @@ async function renderGirlHome(){
           <div class="brand-mark"></div>
           <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
-          <button class="logout-btn" id="logout" title="Cerrar sesión">🚪 Salir</button>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖 Historial</button>
+          <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:#d9898a;color:white;padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">🚪 Salir</button>
         </div>
       </div>
       <main></main>` + screen.innerHTML;
@@ -1043,7 +1043,11 @@ async function renderGirlHome(){
   // Asegurar que el logout siempre funcione
   const logoutBtn = document.getElementById('logout');
   if(logoutBtn){
-    logoutBtn.onclick = ()=>confirmLogout();
+    logoutBtn.onclick = (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      confirmLogout();
+    };
   }
   
   // Extra: Buscar el logout en cualquier lugar del DOM como backup
@@ -1219,7 +1223,7 @@ async function renderLeaderHome(){
     </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
-  document.getElementById('downloadReportBtnTop').onclick = downloadDevocionalReport;
+  document.getElementById('downloadReportBtnTop').onclick = showMonthSelector;
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
   });
@@ -1263,7 +1267,7 @@ async function renderTabHoy(){
     <div id="rosterList">${rows.map(r=>rosterRowHTML(r.n, r.has, 'hoy')).join('')}</div>
   `;
   body.querySelectorAll('.chip').forEach(c=> c.onclick=()=>{ State.filter=c.dataset.f; renderTabHoy(); });
-  document.getElementById('downloadReportBtn').onclick = downloadDevocionalReport;
+  document.getElementById('downloadReportBtn').onclick = showMonthSelector;
   body.querySelectorAll('.roster-row').forEach(row=>{
     row.onclick = ()=> openGirlModal(row.dataset.id, today);
   });
@@ -1560,32 +1564,101 @@ function renderEvidenceGallery(reg){
   `;
 }
 
-/* ================= EXCEL DOWNLOAD ================= */
-async function downloadDevocionalReport(){
-  // Rango: 24 ago - HOY (dinámico, se actualiza cada día)
-  const start = new Date(2026, 7, 24);  // 24 agosto (fijo)
-  const today = new Date();              // HOY (dinámico)
+/* ================= MONTH SELECTOR MODAL ================= */
+function showMonthSelector(){
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;
+    z-index:10000;
+  `;
+  
+  const months = [
+    { name: 'Agosto 2026', start: new Date(2026, 7, 24), end: new Date(2026, 7, 31) },
+    { name: 'Septiembre 2026', start: new Date(2026, 8, 1), end: new Date(2026, 8, 30) },
+    { name: 'Octubre 2026', start: new Date(2026, 9, 1), end: new Date(2026, 9, 31) },
+    { name: 'Noviembre 2026', start: new Date(2026, 10, 1), end: new Date(2026, 10, 30) },
+    { name: 'Diciembre 2026', start: new Date(2026, 11, 1), end: new Date(2026, 11, 31) }
+  ];
+  
+  let html = `
+    <div style="background:white;border-radius:12px;padding:30px;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+      <h2 style="margin:0 0 20px 0;color:#333;text-align:center;">📅 Selecciona el mes</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+  `;
+  
+  months.forEach((month, idx) => {
+    html += `
+      <button data-month="${idx}" style="
+        padding:12px 16px;background:#6fb882;color:white;border:none;
+        border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;
+        transition:background 0.2s;
+      " onmouseover="this.style.background='#5da375'" onmouseout="this.style.background='#6fb882'">
+        ${month.name}
+      </button>
+    `;
+  });
+  
+  html += `
+      <button data-cancel="true" style="
+        padding:12px 16px;background:#999;color:white;border:none;
+        border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;
+        margin-top:10px;
+      ">Cancelar</button>
+      </div>
+    </div>
+  `;
+  
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  
+  modal.querySelectorAll('button[data-month]').forEach(btn => {
+    btn.onclick = async () => {
+      const idx = parseInt(btn.dataset.month);
+      const month = months[idx];
+      document.body.removeChild(modal);
+      await downloadDevocionalReportByMonth(month.start, month.end, month.name);
+    };
+  });
+  
+  modal.querySelector('button[data-cancel="true"]').onclick = () => {
+    document.body.removeChild(modal);
+  };
+}
+
+/* ================= DOWNLOAD BY MONTH ================= */
+async function downloadDevocionalReportByMonth(startDate, endDate, monthName){
+  toast('⏳ Generando reporte...');
   
   // Generar array de fechas
   const dates = [];
-  for(let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
+  for(let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)){
     dates.push(d.toISOString().split('T')[0]);
   }
   
-  // Recolectar datos
+  // Recolectar datos de TODAS las señoritas (no filtrar por activa)
   const reportData = {};
-  for(const person of State.names){
-    if(!person.activa) continue;
-    reportData[person.nombre] = {};
+  
+  // Usar DEFAULT_NAMES para asegurar que tenemos TODAS las 36
+  for(const person of DEFAULT_NAMES){
+    reportData[person] = {};
     
     for(const dateStr of dates){
-      const reg = await sGet('registro:'+dateStr+':'+person.id);
-      if(reg && reg.fotos && reg.fotos.length > 0){
-        reportData[person.nombre][dateStr] = '✓';
-      } else if(reg && !reg.fotos){
-        reportData[person.nombre][dateStr] = '⊘';
+      // Buscar por nombre en State.names para obtener el ID
+      const personObj = State.names.find(n => n.nombre === person);
+      const personId = personObj ? personObj.id : 'unknown';
+      
+      if(personId !== 'unknown'){
+        const reg = await sGet('registro:'+dateStr+':'+personId);
+        if(reg && reg.fotos && reg.fotos.length > 0){
+          reportData[person][dateStr] = '✓';
+        } else if(reg && !reg.fotos){
+          reportData[person][dateStr] = '⊘';
+        } else {
+          reportData[person][dateStr] = '✗';
+        }
       } else {
-        reportData[person.nombre][dateStr] = '✗';
+        reportData[person][dateStr] = '✗';
       }
     }
   }
@@ -1593,8 +1666,13 @@ async function downloadDevocionalReport(){
   // Crear CSV ordenado
   let csv = 'Señorita,' + dates.map(d => {
     const day = d.split('-')[2].replace(/^0/, '');
-    const mes = d.startsWith('2026-08') ? 'ago' : 'sep';
-    return day + ' ' + mes;
+    const monthNum = d.split('-')[1];
+    if(monthNum === '08') return day + ' ago';
+    if(monthNum === '09') return day + ' sep';
+    if(monthNum === '10') return day + ' oct';
+    if(monthNum === '11') return day + ' nov';
+    if(monthNum === '12') return day + ' dic';
+    return day;
   }).join(',') + '\n';
   
   // Agregar datos ordenados por nombre
@@ -1608,13 +1686,13 @@ async function downloadDevocionalReport(){
   const url = URL.createObjectURL(blob);
   
   link.setAttribute('href', url);
-  link.setAttribute('download', `Reporte_Devocionales_${dates[0]}_${dates[dates.length-1]}.csv`);
+  link.setAttribute('download', `Reporte_${monthName.replace(' ', '_')}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   
-  toast('✅ Reporte descargado');
+  toast('✅ Reporte descargado - ' + DEFAULT_NAMES.length + ' señoritas');
 }
 
 init();
