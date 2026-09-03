@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-03-logout-mejorado-visible";
+const APP_VERSION = "2026-09-03-arreglo-nombres-logout-visible";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1019,7 +1019,8 @@ async function renderGirlHome(){
 
   await loadDay(selectedDate);
 
-  const topbar = document.querySelector('.topbar');
+  // Asegurar que existe topbar con logout
+  let topbar = document.querySelector('.topbar');
   if(!topbar){
     const screen = document.querySelector('.screen');
     if(screen){
@@ -1035,10 +1036,28 @@ async function renderGirlHome(){
         </div>
       </div>
       <main></main>` + screen.innerHTML;
+      topbar = document.querySelector('.topbar');
+    }
+  } else {
+    // Si topbar ya existe, agregar botones si no están
+    let logoutBtn = topbar.querySelector('#logout');
+    if(!logoutBtn){
+      const buttonContainer = topbar.querySelector('[style*="display:flex"]') || document.createElement('div');
+      if(!buttonContainer.querySelector('#logout')){
+        const logoutBtnNew = document.createElement('button');
+        logoutBtnNew.id = 'logout';
+        logoutBtnNew.innerHTML = '🚪 Salir';
+        logoutBtnNew.className = 'logout-btn';
+        logoutBtnNew.style.cssText = 'background:#d9898a;color:white;padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;';
+        buttonContainer.appendChild(logoutBtnNew);
+      }
     }
   }
 
-  document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
+  const historyBtn = document.getElementById('historyBtn');
+  if(historyBtn){
+    historyBtn.onclick = ()=>render('girlHistory');
+  }
   
   // Asegurar que el logout siempre funcione
   const logoutBtn = document.getElementById('logout');
@@ -1050,7 +1069,7 @@ async function renderGirlHome(){
     };
   }
   
-  // Extra: Buscar el logout en cualquier lugar del DOM como backup
+  // Extra: Búsqueda intensiva por logout como backup
   setTimeout(()=>{
     document.querySelectorAll('[id="logout"]').forEach(btn=>{
       btn.onclick = ()=>confirmLogout();
@@ -1640,25 +1659,26 @@ async function downloadDevocionalReportByMonth(startDate, endDate, monthName){
   const reportData = {};
   
   // Usar DEFAULT_NAMES para asegurar que tenemos TODAS las 36
-  for(const person of DEFAULT_NAMES){
-    reportData[person] = {};
+  for(const personObj of DEFAULT_NAMES){
+    const personName = personObj.nombre || personObj;  // Si es string o objeto
+    reportData[personName] = {};
     
     for(const dateStr of dates){
       // Buscar por nombre en State.names para obtener el ID
-      const personObj = State.names.find(n => n.nombre === person);
-      const personId = personObj ? personObj.id : 'unknown';
+      const personState = State.names.find(n => n.nombre === personName);
+      const personId = personState ? personState.id : 'unknown';
       
       if(personId !== 'unknown'){
         const reg = await sGet('registro:'+dateStr+':'+personId);
         if(reg && reg.fotos && reg.fotos.length > 0){
-          reportData[person][dateStr] = '✓';
+          reportData[personName][dateStr] = '✓';
         } else if(reg && !reg.fotos){
-          reportData[person][dateStr] = '⊘';
+          reportData[personName][dateStr] = '⊘';
         } else {
-          reportData[person][dateStr] = '✗';
+          reportData[personName][dateStr] = '✗';
         }
       } else {
-        reportData[person][dateStr] = '✗';
+        reportData[personName][dateStr] = '✗';
       }
     }
   }
