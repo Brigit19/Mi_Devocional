@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-02-reporte-fecha-rango";
+const APP_VERSION = "2026-09-03-reporte-dinamico-completo";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1558,35 +1558,53 @@ function renderEvidenceGallery(reg){
 
 /* ================= EXCEL DOWNLOAD ================= */
 async function downloadDevocionalReport(){
-  // Rango: 25 ago - última fecha disponible
-  const start = new Date(2026, 7, 25); // 25 agosto
-  const today = new Date();
+  // Rango: 24 ago - HOY (dinámico, se actualiza cada día)
+  const start = new Date(2026, 7, 24);  // 24 agosto (fijo)
+  const today = new Date();              // HOY (dinámico)
   
-  let csv = 'Señorita,Fecha,Estado,Hora\n';
-  
-  // Recorrer cada día
+  // Generar array de fechas
+  const dates = [];
   for(let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
-    const dateStr = d.toISOString().split('T')[0];
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  
+  // Recolectar datos
+  const reportData = {};
+  for(const person of State.names){
+    if(!person.activa) continue;
+    reportData[person.nombre] = {};
     
-    // Recorrer cada señorita
-    for(const person of State.names){
-      if(!person.activa) continue;
-      
+    for(const dateStr of dates){
       const reg = await sGet('registro:'+dateStr+':'+person.id);
-      const hora = reg ? (reg.hora || 'sin registrar') : '';
-      const estado = reg ? (reg.fotos && reg.fotos.length > 0 ? 'Presentado' : 'Sin fotos') : 'No enviado';
-      
-      csv += `"${person.nombre}","${dateStr}","${estado}","${hora}"\n`;
+      if(reg && reg.fotos && reg.fotos.length > 0){
+        reportData[person.nombre][dateStr] = '✓';
+      } else if(reg && !reg.fotos){
+        reportData[person.nombre][dateStr] = '⊘';
+      } else {
+        reportData[person.nombre][dateStr] = '✗';
+      }
     }
   }
   
-  // Descargar como CSV (Excel lo abre correctamente)
+  // Crear CSV ordenado
+  let csv = 'Señorita,' + dates.map(d => {
+    const day = d.split('-')[2].replace(/^0/, '');
+    const mes = d.startsWith('2026-08') ? 'ago' : 'sep';
+    return day + ' ' + mes;
+  }).join(',') + '\n';
+  
+  // Agregar datos ordenados por nombre
+  for(const name of Object.keys(reportData).sort()){
+    csv += '"' + name + '",' + dates.map(d => reportData[name][d] || '-').join(',') + '\n';
+  }
+  
+  // Descargar
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   
   link.setAttribute('href', url);
-  link.setAttribute('download', `Reporte_Devocionales_25ago-${today.getDate()}sep.csv`);
+  link.setAttribute('download', `Reporte_Devocionales_${dates[0]}_${dates[dates.length-1]}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
