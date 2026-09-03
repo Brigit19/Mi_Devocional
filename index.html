@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-03-logout-VISIBLE-final";
+const APP_VERSION = "2026-09-03-evidencias-restauradas";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -865,15 +865,16 @@ function garantizarLogoutEnSenoritas(){
 
 async function renderGirlHome(){
   main.innerHTML = `
-    <div class="screen">
-      <div style="position:fixed;top:0;left:0;right:0;height:60px;background:#93547A;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-        <div style="color:white;font-weight:600;font-size:16px;">
-          ${State.currentUser.nombre.split(' ')[0]}
-          <br><small style="font-size:11px;opacity:0.9;">Ministerio Juvenil</small>
+    <div class="screen" style="display:flex;flex-direction:column;height:100vh;">
+      <div id="girlTopbar" style="position:sticky;top:0;background:#93547A;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);z-index:100;flex-shrink:0;">
+        <div style="color:white;font-weight:600;font-size:14px;">
+          <span id="girlNameTop">${State.currentUser.nombre.split(' ')[0]}</span><br><small style="font-size:10px;opacity:0.9;">Ministerio Juvenil</small>
         </div>
-        <button id="logoutBtnVisible" style="background:#d9898a;color:white;padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">🚪 Salir</button>
+        <button id="logoutBtnVisible" style="background:#d9898a;color:white;padding:8px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">🚪 Salir</button>
       </div>
-      <main style="margin-top:70px;"></main>
+      <div id="girlMainContent" style="flex:1;overflow-y:auto;padding:12px;">
+        <div style="text-align:center;padding:60px 0;color:var(--ink-soft);">Cargando devocional...</div>
+      </div>
     </div>
   `;
   
@@ -911,7 +912,7 @@ async function renderGirlHome(){
     if(daysUntilDeadline === 1){ deadlineColor = 'var(--danger)'; deadlineIcon = '⚠️'; }
     else if(daysUntilDeadline <= 0){ deadlineColor = '#999'; deadlineIcon = '🔒'; }
 
-    const mainContent = document.querySelector('main');
+    const mainContent = document.getElementById('girlMainContent');
     if(!mainContent) return;
     
     mainContent.innerHTML = `
@@ -1494,7 +1495,30 @@ async function openGirlModal(id, dateStr){
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
-/* ================= COMPRESS IMAGE ================= */
+/* ================= RENDER EVIDENCE GALLERY ================= */
+function renderEvidenceGallery(reg){
+  if(!reg || (!reg.fotos && !reg.foto)) return '<p style="color:var(--ink-soft);">Sin evidencia</p>';
+  
+  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
+  if(!fotos.length) return '<p style="color:var(--ink-soft);">Sin fotos</p>';
+  
+  return `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px;">
+      ${fotos.map((foto, i)=>`
+        <div style="position:relative;overflow:hidden;border-radius:8px;aspect-ratio:1;background:var(--line);">
+          <img src="${foto}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" 
+               onclick="expandImage('${i}')" alt="Foto ${i+1}">
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function expandImage(idx){
+  alert('Imagen ' + (parseInt(idx)+1));
+}
+
+
 async function compressImage(file, maxWidth, quality){
   return new Promise((resolve)=>{
     const reader = new FileReader();
