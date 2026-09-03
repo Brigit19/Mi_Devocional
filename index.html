@@ -477,7 +477,7 @@ function slugId(name, idx){
 async function ensureSeed(){
   let names = await sGet('nombres');
   if(!names){
-    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000' }));
+    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n.nombre,i), nombre:n.nombre, pin:n.pin, activa: true }));
     await sSet('nombres', names);
   }
   let config = await sGet('config');
@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-03-reporte-dinamico-completo";
+const APP_VERSION = "2026-09-03-reporte-todas-36-verde";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1203,7 +1203,10 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      <button class="icon-btn" id="logout">Salir</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="downloadReportBtnTop" style="padding:8px 14px;background:#6fb882;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;">📊 Reporte</button>
+        <button class="icon-btn" id="logout">Salir</button>
+      </div>
     </div>
     <main>
       <div class="tabs">
@@ -1216,6 +1219,7 @@ async function renderLeaderHome(){
     </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
+  document.getElementById('downloadReportBtnTop').onclick = downloadDevocionalReport;
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
   });
