@@ -477,7 +477,7 @@ function slugId(name, idx){
 async function ensureSeed(){
   let names = await sGet('nombres');
   if(!names){
-    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n.nombre,i), nombre:n.nombre, pin:n.pin, activa: true }));
+    names = DEFAULT_NAMES.map((n,i)=>({ id: slugId(n,i), nombre:n, pin:'0000' }));
     await sSet('nombres', names);
   }
   let config = await sGet('config');
@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-03-arreglo-nombres-logout-visible";
+const APP_VERSION = "2026-09-03-upload-completo";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -741,10 +741,7 @@ async function renderGirlHistory(){
         </div>
         
         <hr style="margin:20px 0;border:none;border-top:1px solid var(--line);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <h2 style="color:var(--primary-dark);margin:0;">📖 Tu historial</h2>
-          <button id="downloadHistoryBtn" style="padding:8px 16px;background:var(--primary-dark);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">📊 Descargar</button>
-        </div>
+        <h2 style="color:var(--primary-dark);margin-bottom:16px;">📖 Tu historial</h2>
         
         <div id="historyContent" style="max-height:40vh;overflow-y:auto;">
           <div style="text-align:center;padding:20px;color:var(--ink-soft);">Cargando tus devocionales...</div>
@@ -780,7 +777,7 @@ async function renderGirlHistory(){
             </div>
             <span style="font-size:28px;">✨</span>
           </div>
-          ${reg.fotos ? `<div class="thumb-grid" style="margin-top:8px;grid-template-columns:repeat(3,1fr);gap:8px;">${reg.fotos.map(f=>`<img src="${f}" style="height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;" onclick="openImageViewer('${f}');" onmouseover="this.style.transform='scale(1.05)';this.style.borderColor='var(--primary-dark)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='transparent';this.style.boxShadow='none';"/>`).join('')}</div>` : ''}
+          ${reg.fotos ? `<div class="thumb-grid" style="margin-top:8px;grid-template-columns:repeat(3,1fr);">${reg.fotos.map(f=>`<img src="${f}" style="height:60px;">`).join('')}</div>` : ''}
         </div>
       `;
     }
@@ -789,32 +786,6 @@ async function renderGirlHistory(){
   }
   
   document.getElementById('backBtn').onclick = ()=> renderGirlHome();
-  document.getElementById('downloadHistoryBtn').onclick = async ()=>{
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-    
-    let csv = 'Fecha,Estado\\n';
-    const dim = daysInMonth(now.getFullYear(), now.getMonth()+1);
-    
-    for(let i=1; i<=dim; i++){
-      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-      const reg = await sGet('registro:'+dateStr+':'+user.id);
-      const status = reg ? (reg.fotos && reg.fotos.length > 0 ? 'Presentado' : 'Sin fotos') : 'No enviado';
-      csv += `"${fmtDateShort(dateStr)}","${status}"\\n`;
-    }
-    
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Mi_Historial_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    toast('✅ Historial descargado');
-  };
 }
 
 
@@ -965,7 +936,7 @@ async function renderGirlHome(){
         <input type="file" id="fileInputDay${dateStr.replace(/-/g,'')}" accept="image/*" multiple style="display:none;">
         ${registroDay && registroDay.fotos && registroDay.fotos.length > 0 ? `
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-          ${registroDay.fotos.map((f,i)=>`<img src="${f}" style="width:60px;height:60px;border-radius:8px;cursor:pointer;object-fit:cover;border:2px solid transparent;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onclick="openImageViewer('${f}');" onmouseover="this.style.transform='scale(1.1)';this.style.borderColor='var(--primary-dark)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='transparent';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">`).join('')}
+          ${registroDay.fotos.map((f,i)=>`<img src="${f}" style="width:60px;height:60px;border-radius:8px;cursor:pointer;object-fit:cover;" onclick="openImageViewer('${f}');">`).join('')}
         </div>` : ''}
         ${registroDay && registroDay.hora ? `<p style="text-align:center;font-size:12px;color:var(--ink-soft);margin-top:12px;">Subido: ${registroDay.hora}</p>` : ''}
       </div>` : ''}
@@ -1019,8 +990,7 @@ async function renderGirlHome(){
 
   await loadDay(selectedDate);
 
-  // Asegurar que existe topbar con logout
-  let topbar = document.querySelector('.topbar');
+  const topbar = document.querySelector('.topbar');
   if(!topbar){
     const screen = document.querySelector('.screen');
     if(screen){
@@ -1030,46 +1000,24 @@ async function renderGirlHome(){
           <div class="brand-mark"></div>
           <div class="brand-text">${user.nombre.split(' ')[0]}<small>Ministerio Juvenil</small></div>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖 Historial</button>
-          <button class="logout-btn" id="logout" title="Cerrar sesión" style="background:#d9898a;color:white;padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">🚪 Salir</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="icon-btn" id="historyBtn" title="Ver historial" style="font-size:18px;padding:6px 10px;">📖</button>
+          <button class="logout-btn" id="logout" title="Cerrar sesión">🚪 Salir</button>
         </div>
       </div>
       <main></main>` + screen.innerHTML;
-      topbar = document.querySelector('.topbar');
-    }
-  } else {
-    // Si topbar ya existe, agregar botones si no están
-    let logoutBtn = topbar.querySelector('#logout');
-    if(!logoutBtn){
-      const buttonContainer = topbar.querySelector('[style*="display:flex"]') || document.createElement('div');
-      if(!buttonContainer.querySelector('#logout')){
-        const logoutBtnNew = document.createElement('button');
-        logoutBtnNew.id = 'logout';
-        logoutBtnNew.innerHTML = '🚪 Salir';
-        logoutBtnNew.className = 'logout-btn';
-        logoutBtnNew.style.cssText = 'background:#d9898a;color:white;padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;';
-        buttonContainer.appendChild(logoutBtnNew);
-      }
     }
   }
 
-  const historyBtn = document.getElementById('historyBtn');
-  if(historyBtn){
-    historyBtn.onclick = ()=>render('girlHistory');
-  }
+  document.getElementById('historyBtn').onclick = ()=>render('girlHistory');
   
   // Asegurar que el logout siempre funcione
   const logoutBtn = document.getElementById('logout');
   if(logoutBtn){
-    logoutBtn.onclick = (e)=>{
-      e.preventDefault();
-      e.stopPropagation();
-      confirmLogout();
-    };
+    logoutBtn.onclick = ()=>confirmLogout();
   }
   
-  // Extra: Búsqueda intensiva por logout como backup
+  // Extra: Buscar el logout en cualquier lugar del DOM como backup
   setTimeout(()=>{
     document.querySelectorAll('[id="logout"]').forEach(btn=>{
       btn.onclick = ()=>confirmLogout();
@@ -1226,10 +1174,7 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="downloadReportBtnTop" style="padding:8px 14px;background:#6fb882;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;">📊 Reporte</button>
-        <button class="icon-btn" id="logout">Salir</button>
-      </div>
+      <button class="icon-btn" id="logout">Salir</button>
     </div>
     <main>
       <div class="tabs">
@@ -1242,7 +1187,6 @@ async function renderLeaderHome(){
     </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
-  document.getElementById('downloadReportBtnTop').onclick = showMonthSelector;
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
   });
@@ -1277,7 +1221,7 @@ async function renderTabHoy(){
   if(State.filter==='listas') rows = rows.filter(r=>r.has);
 
   body.innerHTML = `
-    <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div><button id="downloadReportBtn" style="padding:6px 12px;background:var(--primary-dark);color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;">📊 Reporte</button></div>
+    <div class="section-title"><div><h2>Hoy · ${fmtDateLong(today)}</h2><p>${yes} de ${total} ya subieron su evidencia</p></div></div>
     <div class="filter-chips">
       <div class="chip ${State.filter==='todas'?'active':''}" data-f="todas">Todas</div>
       <div class="chip ${State.filter==='pendientes'?'active':''}" data-f="pendientes">Pendientes</div>
@@ -1286,7 +1230,6 @@ async function renderTabHoy(){
     <div id="rosterList">${rows.map(r=>rosterRowHTML(r.n, r.has, 'hoy')).join('')}</div>
   `;
   body.querySelectorAll('.chip').forEach(c=> c.onclick=()=>{ State.filter=c.dataset.f; renderTabHoy(); });
-  document.getElementById('downloadReportBtn').onclick = showMonthSelector;
   body.querySelectorAll('.roster-row').forEach(row=>{
     row.onclick = ()=> openGirlModal(row.dataset.id, today);
   });
@@ -1563,156 +1506,86 @@ async function openGirlModal(id, dateStr){
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
 }
 
-/* ================= IMAGE VIEWER ================= */
-function openImageViewer(src){
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
-  overlay.innerHTML = `<img src="${src}" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;box-shadow:0 0 30px rgba(0,0,0,0.5);">`;
-  overlay.onclick = ()=> overlay.remove();
-  document.body.appendChild(overlay);
-}
-
-/* ================= EVIDENCE GALLERY ================= */
-function renderEvidenceGallery(reg){
-  const fotos = reg.fotos || (reg.foto ? [reg.foto] : []);
-  if(fotos.length === 0) return '<p style="color:var(--ink-soft);font-size:13px;">Sin fotos</p>';
-  return `
-    <div class="thumb-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;">
-      ${fotos.map(f=>`<img src="${f}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform .2s;border:2px solid transparent;" onclick="openImageViewer('${f}');" onmouseover="this.style.transform='scale(1.05)';this.style.borderColor='var(--primary-dark)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';this.style.cursor='pointer';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='transparent';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';"/>`).join('')}
-    </div>
-  `;
-}
-
-/* ================= MONTH SELECTOR MODAL ================= */
-function showMonthSelector(){
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position:fixed;top:0;left:0;right:0;bottom:0;
-    background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;
-    z-index:10000;
-  `;
-  
-  const months = [
-    { name: 'Agosto 2026', start: new Date(2026, 7, 24), end: new Date(2026, 7, 31) },
-    { name: 'Septiembre 2026', start: new Date(2026, 8, 1), end: new Date(2026, 8, 30) },
-    { name: 'Octubre 2026', start: new Date(2026, 9, 1), end: new Date(2026, 9, 31) },
-    { name: 'Noviembre 2026', start: new Date(2026, 10, 1), end: new Date(2026, 10, 30) },
-    { name: 'Diciembre 2026', start: new Date(2026, 11, 1), end: new Date(2026, 11, 31) }
-  ];
-  
-  let html = `
-    <div style="background:white;border-radius:12px;padding:30px;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-      <h2 style="margin:0 0 20px 0;color:#333;text-align:center;">📅 Selecciona el mes</h2>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-  `;
-  
-  months.forEach((month, idx) => {
-    html += `
-      <button data-month="${idx}" style="
-        padding:12px 16px;background:#6fb882;color:white;border:none;
-        border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;
-        transition:background 0.2s;
-      " onmouseover="this.style.background='#5da375'" onmouseout="this.style.background='#6fb882'">
-        ${month.name}
-      </button>
-    `;
-  });
-  
-  html += `
-      <button data-cancel="true" style="
-        padding:12px 16px;background:#999;color:white;border:none;
-        border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;
-        margin-top:10px;
-      ">Cancelar</button>
-      </div>
-    </div>
-  `;
-  
-  modal.innerHTML = html;
-  document.body.appendChild(modal);
-  
-  modal.querySelectorAll('button[data-month]').forEach(btn => {
-    btn.onclick = async () => {
-      const idx = parseInt(btn.dataset.month);
-      const month = months[idx];
-      document.body.removeChild(modal);
-      await downloadDevocionalReportByMonth(month.start, month.end, month.name);
+/* ================= COMPRESS IMAGE ================= */
+async function compressImage(file, maxWidth, quality){
+  return new Promise((resolve)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if(w > h && w > maxWidth){ h *= maxWidth/w; w = maxWidth; }
+        else if(h > maxWidth){ w *= maxWidth/h; h = maxWidth; }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
     };
+    reader.readAsDataURL(file);
   });
-  
-  modal.querySelector('button[data-cancel="true"]').onclick = () => {
-    document.body.removeChild(modal);
-  };
 }
 
-/* ================= DOWNLOAD BY MONTH ================= */
-async function downloadDevocionalReportByMonth(startDate, endDate, monthName){
-  toast('⏳ Generando reporte...');
+/* ================= RECORD STREAK ================= */
+async function recordStreak(userId, dateStr){
+  const streak = (await sGet('streak:'+userId)) || { racha:0, ultimaFecha:null };
+  const today = todayStr();
+  const yesterday = addDaysToStr(today, -1);
   
-  // Generar array de fechas
-  const dates = [];
-  for(let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)){
-    dates.push(d.toISOString().split('T')[0]);
+  if(dateStr === today){
+    if(streak.ultimaFecha === yesterday || streak.ultimaFecha === today){
+      streak.racha = (streak.racha || 0) + 1;
+    } else {
+      streak.racha = 1;
+    }
+    streak.ultimaFecha = today;
   }
   
-  // Recolectar datos de TODAS las señoritas (no filtrar por activa)
-  const reportData = {};
-  
-  // Usar DEFAULT_NAMES para asegurar que tenemos TODAS las 36
-  for(const personObj of DEFAULT_NAMES){
-    const personName = personObj.nombre || personObj;  // Si es string o objeto
-    reportData[personName] = {};
-    
-    for(const dateStr of dates){
-      // Buscar por nombre en State.names para obtener el ID
-      const personState = State.names.find(n => n.nombre === personName);
-      const personId = personState ? personState.id : 'unknown';
-      
-      if(personId !== 'unknown'){
-        const reg = await sGet('registro:'+dateStr+':'+personId);
-        if(reg && reg.fotos && reg.fotos.length > 0){
-          reportData[personName][dateStr] = '✓';
-        } else if(reg && !reg.fotos){
-          reportData[personName][dateStr] = '⊘';
-        } else {
-          reportData[personName][dateStr] = '✗';
-        }
-      } else {
-        reportData[personName][dateStr] = '✗';
-      }
+  await sSet('streak:'+userId, streak);
+}
+
+function showMonthSelector(){
+  const months = [
+    {name:'Agosto 2026',start:new Date(2026,7,24),end:new Date(2026,7,31)},
+    {name:'Septiembre 2026',start:new Date(2026,8,1),end:new Date(2026,8,30)},
+    {name:'Octubre 2026',start:new Date(2026,9,1),end:new Date(2026,9,31)},
+    {name:'Noviembre 2026',start:new Date(2026,10,1),end:new Date(2026,10,30)},
+    {name:'Diciembre 2026',start:new Date(2026,11,1),end:new Date(2026,11,31)}
+  ];
+  const md=document.createElement('div');
+  md.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000';
+  md.innerHTML=`<div style="background:white;border-radius:12px;padding:30px;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.3)"><h2 style="margin:0 0 20px 0;color:#333;text-align:center">📅 Selecciona el mes</h2><div style="display:flex;flex-direction:column;gap:10px">${months.map((m,i)=>`<button data-m="${i}" style="padding:12px 16px;background:#6fb882;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">${m.name}</button>`).join('')}<button data-c="1" style="padding:12px 16px;background:#999;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;margin-top:10px">Cancelar</button></div></div>`;
+  document.body.appendChild(md);
+  md.querySelectorAll('button[data-m]').forEach(b=>{b.onclick=async()=>{const m=months[parseInt(b.dataset.m)];document.body.removeChild(md);await downloadReport(m.start,m.end,m.name)}});
+  md.querySelector('button[data-c]').onclick=()=>document.body.removeChild(md);
+}
+
+async function downloadReport(start,end,name){
+  toast('⏳ Generando reporte...');
+  const dates=[];
+  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){dates.push(d.toISOString().split('T')[0])}
+  const data={};
+  for(const p of DEFAULT_NAMES){
+    const pid=p.id;
+    data[p.nombre]={};
+    for(const dt of dates){
+      const reg=await sGet('registro:'+dt+':'+pid);
+      data[p.nombre][dt]=reg&&reg.fotos&&reg.fotos.length>0?'✓':reg?'⊘':'✗';
     }
   }
-  
-  // Crear CSV ordenado
-  let csv = 'Señorita,' + dates.map(d => {
-    const day = d.split('-')[2].replace(/^0/, '');
-    const monthNum = d.split('-')[1];
-    if(monthNum === '08') return day + ' ago';
-    if(monthNum === '09') return day + ' sep';
-    if(monthNum === '10') return day + ' oct';
-    if(monthNum === '11') return day + ' nov';
-    if(monthNum === '12') return day + ' dic';
-    return day;
-  }).join(',') + '\n';
-  
-  // Agregar datos ordenados por nombre
-  for(const name of Object.keys(reportData).sort()){
-    csv += '"' + name + '",' + dates.map(d => reportData[name][d] || '-').join(',') + '\n';
-  }
-  
-  // Descargar
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', `Reporte_${monthName.replace(' ', '_')}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  toast('✅ Reporte descargado - ' + DEFAULT_NAMES.length + ' señoritas');
+  let csv='Señorita,'+dates.map(d=>{const dy=d.split('-')[2].replace(/^0/,'');const mo=d.split('-')[1];return dy+(mo==='08'?' ago':mo==='09'?' sep':mo==='10'?' oct':mo==='11'?' nov':' dic')}).join(',')+'\n';
+  Object.keys(data).sort().forEach(n=>{csv+='"'+n+'",'+dates.map(d=>data[n][d]||'-').join(',')+'\n'});
+  const b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const l=document.createElement('a');
+  l.href=URL.createObjectURL(b);
+  l.download='Reporte_'+name.replace(' ','_')+'.csv';
+  l.style.visibility='hidden';
+  document.body.appendChild(l);
+  l.click();
+  document.body.removeChild(l);
+  toast('✅ Reporte descargado');
 }
 
 init();
