@@ -593,7 +593,7 @@ async function init(){
 }
 
 /* ================= VERSION CHECK / AUTO-UPDATE BANNER ================= */
-const APP_VERSION = "2026-09-03-evidencias-restauradas";
+const APP_VERSION = "2026-09-03-reporte-matriz-completo";
 let updateBannerShown = false;
 async function checkForUpdate(){
   try{
@@ -1163,7 +1163,10 @@ async function renderLeaderHome(){
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark"></div><div class="brand-text">Panel de líder<small>Casa Apostólica Belén</small></div></div>
-      <button class="icon-btn" id="logout">Salir</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="icon-btn" id="reportBtn" style="background:#6fb882;color:white;padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">📊 Reporte</button>
+        <button class="icon-btn" id="logout">Salir</button>
+      </div>
     </div>
     <main>
       <div class="tabs">
@@ -1176,6 +1179,7 @@ async function renderLeaderHome(){
     </main>
   </div>`;
   $('#logout').onclick = ()=>{ State.leaderAuthed=false; render('role'); };
+  document.getElementById('reportBtn').onclick = ()=>showMonthSelector();
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{ State.tab = t.dataset.t; paintTabs(); renderTab(); };
   });
@@ -1578,17 +1582,26 @@ async function downloadReport(start,end,name){
   toast('⏳ Generando reporte...');
   const dates=[];
   for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){dates.push(d.toISOString().split('T')[0])}
-  const data={};
-  for(const p of DEFAULT_NAMES){
-    const pid=p.id;
-    data[p.nombre]={};
-    for(const dt of dates){
+  
+  // Encabezado: Fecha + nombres de todas las señoritas
+  let csv='Fecha,'+DEFAULT_NAMES.map(p=>'"'+p.nombre+'"').join(',')+'\n';
+  
+  // Filas: cada fecha con datos de cada señorita
+  for(const dt of dates){
+    const dia=dt.split('-')[2].replace(/^0/,'');
+    const mes=dt.split('-')[1];
+    const mesNombre=mes==='08'?'ago':mes==='09'?'sep':mes==='10'?'oct':mes==='11'?'nov':'dic';
+    let fila=dia+' '+mesNombre;
+    
+    for(const p of DEFAULT_NAMES){
+      const pid=p.id;
       const reg=await sGet('registro:'+dt+':'+pid);
-      data[p.nombre][dt]=reg&&reg.fotos&&reg.fotos.length>0?'✓':reg?'⊘':'✗';
+      const valor=reg&&reg.fotos&&reg.fotos.length>0?'✓':reg?'⊘':'✗';
+      fila+=','+valor;
     }
+    csv+=fila+'\n';
   }
-  let csv='Señorita,'+dates.map(d=>{const dy=d.split('-')[2].replace(/^0/,'');const mo=d.split('-')[1];return dy+(mo==='08'?' ago':mo==='09'?' sep':mo==='10'?' oct':mo==='11'?' nov':' dic')}).join(',')+'\n';
-  Object.keys(data).sort().forEach(n=>{csv+='"'+n+'",'+dates.map(d=>data[n][d]||'-').join(',')+'\n'});
+  
   const b=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const l=document.createElement('a');
   l.href=URL.createObjectURL(b);
